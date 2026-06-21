@@ -26,13 +26,18 @@ This project should be built by a master orchestrator session using actual Codex
 
 Do not use sub-agents for implementation work. Worktree sessions have better project functionality, branch isolation, and durable reasoning context for this project.
 
+Read `docs/CODEX_ORCHESTRATION_RESEARCH.md` before spawning or diagnosing worktree sessions.
+
 The master session:
 
 - Plans the next checkpoint.
-- Creates isolated Codex worktree/branch sessions only for substantial work.
-- Verifies that any `startingState.branchName` passed to Codex thread creation already exists as a local Git ref. `branchName` is a starting reference, not a create-new-branch instruction.
-- Pre-creates missing lane branches from current `main`, or uses a working-tree start state and names the intended lane in the prompt.
-- Checks Git worktree registration after creation. If a session is detached at the correct commit, steer it to switch/create the intended lane branch before substantial work or commits.
+- Creates isolated Codex worktree sessions only for substantial work.
+- Uses `startingState.branchName` only for an existing base ref, normally `main`. `branchName` is a starting reference, not a create-new-branch instruction.
+- Treats native Codex-managed detached HEAD worktrees as expected. Do not force branch checkout at the start of worktree sessions.
+- Keeps lane names as logical ownership labels in the thread title and prompt until a branch is needed for commit/push/PR.
+- Creates a real branch only at commit/handoff time, either with the Codex app's Create branch here flow or an explicit unique branch inside that worktree.
+- Checks app registration with `list_threads` and Git registration with `git worktree list --porcelain` after creation.
+- Immediately sets a clear title, pins active worktree threads, records thread IDs, and shares `codex://threads/<thread-id>` links so the user can monitor sessions in the Codex app.
 - Assigns non-overlapping file ownership.
 - Monitors progress.
 - Reviews diffs and tests.

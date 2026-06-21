@@ -5,7 +5,7 @@
 This document is the working implementation plan for building Afferens Memory Guardian as a real, live-only product.
 It also defines how the master Codex session should orchestrate isolated Codex worktree sessions, review their work, merge safely, and continue in loops until substantial checkpoints are reached.
 
-Important orchestration rule: do not use sub-agents for implementation work. Use actual Codex threads/sessions backed by isolated Git worktrees so each implementation lane has full project functionality, durable branch state, and independent reasoning context.
+Important orchestration rule: do not use sub-agents for implementation work. Use actual Codex app threads/sessions backed by isolated Git worktrees so each implementation lane has full project functionality, app-visible reasoning context, and isolated files.
 
 The product requirement is strict:
 
@@ -21,6 +21,7 @@ The product requirement is strict:
 
 - Google Doc brief pasted into this workspace conversation.
 - `Afferens_Memory_Guardian_PRD.md`.
+- `docs/CODEX_ORCHESTRATION_RESEARCH.md` for Codex app worktree/thread orchestration rules.
 - Official Afferens docs: `https://afferens.com/docs`.
 - Official Afferens Quackathon brief: `https://afferens.com/quackathon`.
 - Reference repo: `https://github.com/gamefreakoneone/Project-Memoria_Dementia-Assistant`.
@@ -31,11 +32,13 @@ The pasted Google Doc brief is treated as the event/source-of-truth brief when i
 ## Important Current State
 
 - Git has been initialized and the planning/API-contract baseline has been pushed to `https://github.com/AbhinavGupta707/Quackathon.git`.
+- The Codex app project is registered as `/Users/abhinavgupta/Desktop/Quackathon`.
 - `.env` exists locally and contains the user's Afferens key. Never print, read aloud, commit, or expose it.
 - `.env.example` exists and documents required environment variables.
 - `.gitignore` ignores real env files.
 - `.agents/` could not be created due workspace permissions; root `AGENTS.md` and `docs/AGENT_MEMORY.md` are the durable local memory files.
 - An accidental sub-agent run was stopped and its output was quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`. Do not integrate that stash unless the user explicitly asks to inspect or salvage it.
+- Official Codex docs state that Codex-managed worktrees are created under `$CODEX_HOME/worktrees` and normally start in detached HEAD. Detached HEAD is expected for managed worktrees and should not be diagnosed as a failure by itself.
 
 Because Git index, branch, worktree, and commit operations can require escalated permissions in this environment, request escalation when needed.
 
@@ -521,12 +524,13 @@ The current session acts as master orchestrator. It should work in loops:
 2. Decide the next checkpoint target.
 3. Identify independent workstreams that can run safely in parallel.
 4. Create only substantial Codex worktree sessions.
-5. Assign each session a branch/worktree and explicit file ownership.
-6. Monitor progress every few minutes.
-7. Review each completed session's diff, tests, and notes.
-8. Merge in a controlled order.
-9. Run integration tests and fix seams.
-10. Decide whether to continue to the next checkpoint or stop for manual testing.
+5. Give each session a clear title, pin it while active, and record its thread ID, `codex://threads/<thread-id>` link, worktree path, logical lane, ownership, and status.
+6. Assign each session explicit file ownership.
+7. Monitor progress every few minutes through app thread tools and user-visible thread links.
+8. Review each completed session's diff, tests, and notes.
+9. Merge in a controlled order.
+10. Run integration tests and fix integration issues.
+11. Decide whether to continue to the next checkpoint or stop for manual testing.
 
 Do not create worktree sessions for tiny tasks that are cheaper and safer for the master session to do directly.
 Do not use sub-agents for implementation work.
@@ -540,34 +544,49 @@ The master session should:
 1. Create a new Codex thread for each substantial lane.
 2. Target the saved Quackathon project.
 3. Use a worktree environment.
-4. Start each worktree from current `main`, or from an explicit `ws/...` branch that already exists.
+4. Start each managed worktree from current `main` unless there is a deliberate reason to use another existing base ref.
 5. Before passing `startingState.branchName`, verify it with `git rev-parse --verify <branch>`.
-6. If the branch does not exist, create it from current `main` first, or use `startingState.type = "working-tree"` and put the intended lane name in the prompt.
-7. After thread creation, verify `git worktree list --porcelain` to ensure the new worktree is registered and attached to the intended branch.
-8. If the new worktree is detached at the intended commit, immediately steer that session to `git switch <lane-branch>` before substantial edits or commits.
-9. Give each session a clear branch/worktree name in its prompt.
-10. Keep a local table of thread IDs, branch names, ownership, and status.
+6. Do not pass a desired new lane branch as `startingState.branchName`. The Codex app treats that field as an existing starting ref.
+7. Expect the created worktree to be detached HEAD at the selected base commit. This is normal for Codex-managed worktrees.
+8. Keep lane names as logical ownership labels in the prompt and thread title until a branch is needed for commit, push, or PR.
+9. If the work should stay in the worktree and be pushed, create a branch at commit time using the Codex app's Create branch here flow or a unique explicit branch inside that worktree.
+10. If the work should move into the foreground checkout, use Handoff instead of checking out the same branch in multiple worktrees.
+11. After thread creation, verify the thread appears in `list_threads` and the worktree appears in `git worktree list --porcelain`.
+12. Immediately set a concise title, pin the active thread, and share/record a `codex://threads/<thread-id>` link.
+13. Keep a local table of thread IDs, titles, worktree paths, logical lanes, ownership, and status.
 
 Failure mode to avoid:
 
 - Codex app worktree creation currently treats `startingState.branchName` as an existing Git reference. It does not create a new branch from that string.
 - Passing a non-existent lane such as `ws/c1-frontend-shell` causes `git worktree add` to fail with `fatal: invalid reference`.
-- A successful worktree creation may still leave the checkout detached at the branch commit. That is workable for reads, but unsafe for isolated commits unless the session attaches to its lane branch.
+- A successful managed worktree creation normally leaves the checkout detached at the selected commit. That is workable and expected. Create a branch only when the work needs to be committed/pushed from that worktree.
+- Failed pending worktree cards in the app sidebar may not appear as normal completed thread records. Diagnose them as failed creation attempts unless `list_threads` shows a live thread.
 - Diagnose this class of failure in layer order: check local refs and worktree registration first, then permissions or runtime issues.
 
 Naming convention:
 
 ```text
-worktrees/
-  checkpoint-1-backend-spine/
-  checkpoint-1-frontend-shell/
-  checkpoint-1-docs-and-devex/
+logical lanes:
+  c1-backend-spine
+  c1-frontend-shell
+  c1-docs-devex
 
 branches:
   ws/c1-backend-spine
   ws/c1-frontend-shell
   ws/c1-docs-devex
 ```
+
+Branch names are created only when needed for commits, pushes, or PRs. They are not passed as new worktree starting refs unless they already exist.
+
+Visibility protocol:
+
+- After `create_thread`, call `list_threads` and confirm the returned thread ID, title, status, and `cwd`.
+- Use `set_thread_title` to make the lane obvious in the sidebar and thread search.
+- Use `set_thread_pinned` for active workstream threads so Codex-managed worktrees are not automatically cleaned up while important.
+- Report the deep link `codex://threads/<thread-id>` to the user for each active spawned session.
+- Tell the user to use thread search (`Cmd+G` on macOS) for the title, branch/lane label, or thread ID if a worktree thread is not visible in the current project list.
+- If only a failed pending worktree card exists and no thread ID is returned by `list_threads`, do not assume there is hidden work. Fix the starting ref or setup error and create a fresh visible thread.
 
 Each worktree session prompt must include:
 
@@ -718,6 +737,9 @@ Every worktree session must end with:
 
 ```text
 Status: complete | blocked
+Thread ID:
+Thread link:
+Logical lane:
 Branch/worktree:
 Files changed:
 Commands run:

@@ -71,10 +71,13 @@ Worktree sessions must do substantial work with clear ownership. Do not create w
 
 When parallelizing:
 
-- Use separate Codex worktree sessions and branches.
-- Before creating a Codex worktree session with `startingState.branchName`, verify that the branch/ref already exists. The Codex app treats `branchName` as an existing starting ref, not as a new branch name to create.
-- If a lane branch does not exist yet, create it from current `main` first, or create the thread from the working tree and put the intended lane name in the prompt.
-- After creation, verify `git worktree list --porcelain`. If a worktree is detached, steer that session to attach to its intended lane branch before substantial edits or commits.
+- Use separate Codex worktree sessions, not sub-agents.
+- Native Codex-managed worktrees normally start in detached HEAD. This is expected and should not be treated as a failure.
+- Use `startingState.branchName` only for an existing base ref, normally `main`. It is a starting point, not a create-new-branch instruction.
+- Keep lane names as logical ownership labels in the thread title/prompt until a branch is actually needed for commit/push/PR.
+- Create a real Git branch only at commit/handoff time, either with the Codex app's Create branch here flow or an explicit unique branch inside that worktree.
+- After creation, verify app registration with `list_threads` and Git registration with `git worktree list --porcelain`.
+- Immediately set a clear thread title, pin active worktree threads, and share/record the `codex://threads/<thread-id>` link so the user can open each session in the Codex app.
 - Assign non-overlapping files.
 - Avoid concurrent edits to shared schemas, migrations, root config, or Docker Compose unless coordinated.
 - Require each session to report files changed, commands run, tests run, risks, and integration notes.
