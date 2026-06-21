@@ -9,7 +9,6 @@ import { NodeSetupChecklist } from "@/components/NodeSetupChecklist";
 import { ObjectMemoryTable } from "@/components/ObjectMemoryTable";
 import { ObservationPanel } from "@/components/ObservationPanel";
 import {
-  getAfferensLatest,
   getAfferensStatus,
   getAlerts,
   getHealth,
@@ -19,7 +18,6 @@ import {
   syncPerception
 } from "@/lib/api";
 import type {
-  AfferensLatestResponse,
   AfferensStatus,
   AlertsResponse,
   HealthResponse,
@@ -35,7 +33,6 @@ export default function Home() {
   const sessionId = useMemo(() => "browser-session", []);
   const [health, setHealth] = useState<Loadable<HealthResponse>>({ loading: true });
   const [afferens, setAfferens] = useState<Loadable<AfferensStatus>>({ loading: true });
-  const [latestEvent, setLatestEvent] = useState<Loadable<AfferensLatestResponse>>({ loading: true });
   const [latestObservation, setLatestObservation] = useState<Loadable<LatestObservationResponse>>({ loading: true });
   const [objects, setObjects] = useState<Loadable<ObjectsResponse>>({ loading: true });
   const [tasks, setTasks] = useState<Loadable<TasksResponse>>({ loading: true });
@@ -47,7 +44,6 @@ export default function Home() {
     await Promise.all([
       loadInto(setHealth, getHealth),
       loadInto(setAfferens, getAfferensStatus),
-      loadInto(setLatestEvent, getAfferensLatest),
       loadInto(setLatestObservation, getLatestObservation),
       loadInto(setObjects, getObjects),
       loadInto(setTasks, getTasks),
@@ -91,8 +87,8 @@ export default function Home() {
         </div>
         <div className="header-summary" aria-label="Current Afferens event summary">
           <span>Latest event</span>
-          <strong>{latestEvent.data?.status.latest_event_id || "No live event"}</strong>
-          <small>{latestEvent.error || latestEvent.data?.status.message || "Waiting for backend status"}</small>
+          <strong>{afferens.data?.latest_event_id || "No live event"}</strong>
+          <small>{afferens.error || afferens.data?.message || "Waiting for backend status"}</small>
         </div>
       </section>
 

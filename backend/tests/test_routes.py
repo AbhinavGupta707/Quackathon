@@ -67,9 +67,10 @@ def test_afferens_status_maps_inactive_key_without_secret() -> None:
 
 
 def test_health_reports_provider_state() -> None:
-    client = _client_with_transport(
-        httpx.MockTransport(lambda request: httpx.Response(404, json={"detail": "none"}))
-    )
+    def fail_if_called(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("Health must not call live Afferens perception")
+
+    client = _client_with_transport(httpx.MockTransport(fail_if_called))
 
     response = client.get("/api/health")
     payload = response.json()
@@ -79,4 +80,5 @@ def test_health_reports_provider_state() -> None:
     assert payload["version"] == "0.1.0"
     assert payload["environment"] == "test"
     assert payload["services"]["afferens"]["state"] == "degraded"
+    assert "Use /api/afferens/status" in payload["services"]["afferens"]["message"]
     assert payload["services"]["database"]["state"] == "degraded"
