@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+from functools import lru_cache
+
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app import __version__
+
+
+class Settings(BaseSettings):
+    """Runtime configuration.
+
+    Secret values may be loaded from the environment or .env files, but they
+    must never be serialized into status responses.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=("../.env", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+        populate_by_name=True,
+    )
+
+    environment: str = Field(default="development", validation_alias="ENVIRONMENT")
+    version: str = Field(default=__version__, validation_alias="APP_VERSION")
+    afferens_base_url: AnyHttpUrl = Field(
+        default="https://afferens.com",
+        validation_alias="AFFERENS_BASE_URL",
+    )
+    afferens_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="AFFERENS_API_KEY",
+    )
+    afferens_timeout_seconds: float = Field(
+        default=10.0,
+        ge=0.1,
+        le=60.0,
+        validation_alias="AFFERENS_TIMEOUT_SECONDS",
+    )
+
+    @field_validator("environment")
+    @classmethod
+    def normalize_environment(cls, value: str) -> str:
+        return value.strip().lower() or "development"
+
+    @property
+    def afferens_configured(self) -> bool:
+        key = self.afferens_api_key
+        return bool(key and key.get_secret_value().strip())
+
+    def afferens_key_value(self) -> str | None:
+        if not self.afferens_configured or self.afferens_api_key is None:
+            return None
+        return self.afferens_api_key.get_secret_value().strip()
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
