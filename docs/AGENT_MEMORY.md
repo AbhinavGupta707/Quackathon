@@ -75,3 +75,14 @@ Optional Checkpoint 4: Live CV Enrichment
 - `.agents/` could not be created due workspace permissions, so this file and root `AGENTS.md` are the local memory surface.
 - The repository is connected to `https://github.com/AbhinavGupta707/Quackathon.git`.
 - An accidental sub-agent run was stopped. Its unmerged output is quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`; do not integrate it unless the user explicitly asks.
+
+## Active Orchestration
+
+Checkpoint 2 orchestration started from `main` using Codex app-managed worktree threads.
+
+| Lane | Thread ID | Link | Worktree | Ownership |
+| --- | --- | --- | --- | --- |
+| C2 Backend Data Memory | `019eeb13-fd88-76e0-a3af-da4ef15258b3` | `codex://threads/019eeb13-fd88-76e0-a3af-da4ef15258b3` | `/Users/abhinavgupta/.codex/worktrees/46a3/Quackathon` | `backend/**` only |
+| C2 Frontend Memory Query | `019eeb14-44e7-7452-9d5d-d5653b359dd6` | `codex://threads/019eeb14-44e7-7452-9d5d-d5653b359dd6` | `/Users/abhinavgupta/.codex/worktrees/8594/Quackathon` | `frontend/**` only |
+
+These sessions are full Codex app worktree sessions, not sub-agents. They were created from existing `main` and are expected to run detached HEAD until branch/commit handling is needed.
