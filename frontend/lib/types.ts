@@ -60,8 +60,8 @@ export type Observation = {
   room_id?: string | null;
   scene_summary?: string | null;
   human_presence?: "visible" | "not_visible" | "unknown";
-  objects: ObservationObject[];
-  risk_signals: unknown[];
+  objects?: ObservationObject[] | null;
+  risk_signals?: unknown[] | null;
 };
 
 export type LatestObservationResponse = {
@@ -128,10 +128,10 @@ export type AlertsResponse = {
 
 export type SyncResponse = {
   ok: boolean;
-  observations: Observation[];
-  objects_updated: LastSeenObject[];
-  tasks_created: Task[];
-  alerts_created: Alert[];
+  observations?: Observation[] | null;
+  objects_updated?: LastSeenObject[] | null;
+  tasks_created?: Task[] | null;
+  alerts_created?: Alert[] | null;
 };
 
 export type QueryResponse = {

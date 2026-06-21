@@ -24,6 +24,7 @@ import type {
   LatestObservationResponse,
   Loadable,
   ObjectsResponse,
+  SyncResponse,
   TasksResponse
 } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export default function Home() {
   const [alerts, setAlerts] = useState<Loadable<AlertsResponse>>({ loading: true });
   const [syncPending, setSyncPending] = useState(false);
   const [syncError, setSyncError] = useState<string | undefined>();
+  const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([
@@ -63,9 +65,11 @@ export default function Home() {
   async function handleSync() {
     setSyncPending(true);
     setSyncError(undefined);
+    setSyncResult(null);
 
     try {
-      await syncPerception();
+      const result = await syncPerception();
+      setSyncResult(result);
       await refreshAll();
     } catch (error) {
       setSyncError(error instanceof Error ? error.message : "Live perception sync failed.");
@@ -81,8 +85,8 @@ export default function Home() {
           <p className="eyebrow">Afferens Memory Guardian</p>
           <h1 id="app-title">Live Home Assistance Console</h1>
           <p>
-            Operational shell for setup, live observation, evidence-backed memory, active tasks, and caregiver
-            escalation status.
+            Evidence-backed memory, object recovery questions, active verification tasks, and conservative caregiver
+            placeholders from live Afferens perception.
           </p>
         </div>
         <div className="header-summary" aria-label="Current Afferens event summary">
@@ -92,14 +96,37 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="status-strip" aria-label="Live memory console summary">
+        <div>
+          <span>Afferens state</span>
+          <strong>{afferens.data ? afferens.data.state.replace(/_/g, " ") : afferens.loading ? "checking" : "unavailable"}</strong>
+        </div>
+        <div>
+          <span>Remembered objects</span>
+          <strong>{objects.data?.objects.length ?? (objects.loading ? "..." : "0")}</strong>
+        </div>
+        <div>
+          <span>Open tasks</span>
+          <strong>
+            {tasks.data?.tasks.filter((task) => !["verified_resolved", "dismissed"].includes(task.state)).length ??
+              (tasks.loading ? "..." : "0")}
+          </strong>
+        </div>
+        <div>
+          <span>Latest observation</span>
+          <strong>{latestObservation.data?.observation?.id || "not available"}</strong>
+        </div>
+      </section>
+
       <div className="dashboard-grid">
         <div className="dashboard-grid__main">
-          <LiveStatusPanel health={health} afferens={afferens} onRefresh={refreshAll} />
+          <LiveStatusPanel health={health} afferens={afferens} onRefresh={() => void refreshAll()} />
           <ObservationPanel
             latestObservation={latestObservation}
             onSync={handleSync}
             syncError={syncError}
             syncPending={syncPending}
+            syncResult={syncResult}
           />
           <ObjectMemoryTable objects={objects} />
           <ActiveTaskConsole tasks={tasks} />
@@ -108,7 +135,7 @@ export default function Home() {
         <aside className="dashboard-grid__side" aria-label="Setup and caregiver controls">
           <NodeSetupChecklist health={health} afferens={afferens} />
           <AlertQueue alerts={alerts} />
-          <AskInterface sessionId={sessionId} />
+          <AskInterface sessionId={sessionId} onAnswered={() => void refreshAll()} />
         </aside>
       </div>
     </main>

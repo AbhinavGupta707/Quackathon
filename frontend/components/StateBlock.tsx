@@ -1,7 +1,7 @@
 type StateBlockProps = {
   title: string;
   body: string;
-  tone?: "loading" | "empty" | "error";
+  tone?: "loading" | "empty" | "error" | "success";
 };
 
 export function StateBlock({ title, body, tone = "empty" }: StateBlockProps) {
