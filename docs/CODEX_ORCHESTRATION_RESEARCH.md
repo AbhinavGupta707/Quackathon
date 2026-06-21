@@ -77,6 +77,30 @@ For future batches:
 13. Create a Git branch only when the work needs to be committed or pushed from the worktree.
 14. Use Handoff if the work should be brought back into the foreground checkout.
 
+## App-Managed Versus Manual Worktrees
+
+There are two valid isolated-worktree orchestration patterns:
+
+| Pattern | Worktree location | Visibility | Best use |
+| --- | --- | --- | --- |
+| Codex app-managed worktree thread | `$CODEX_HOME/worktrees/...` such as `/Users/abhinavgupta/.codex/worktrees/2bdc/Quackathon` | Real Codex app thread with thread ID, search, deep link, and optional pinning | Default for this project because the user wants sessions visible and monitorable in the Codex app |
+| Manual Git worktree | Project-local path such as `.worktrees/c2-data-memory` | Plain Git checkout; app visibility depends on manually opening/launching a separate Codex session there | Advanced fallback when explicit branch checkout/location control matters more than native app-managed lifecycle |
+
+Manual worktree creation usually looks like:
+
+```bash
+git worktree add -b ws/c2-data-memory .worktrees/c2-data-memory main
+```
+
+This creates a normal branch and checkout. It can be useful, but it changes the operating model:
+
+- The orchestrator owns branch creation and cleanup.
+- The user or orchestrator must open/launch a separate Codex session in that worktree for app-visible work.
+- Branches cannot be checked out in multiple worktrees at once.
+- Manual worktrees should not be the default when the user's requirement is to see each worker inside the Codex app.
+
+For this project, prefer Codex app-managed worktree threads. Use manual `.worktrees/...` only as an explicit fallback after discussing the tradeoff.
+
 ## Visibility Protocol
 
 Every spawned worktree session must have:
@@ -95,6 +119,15 @@ If a session is not visible in the sidebar:
 3. Use the app thread registry via `list_threads` to verify whether the session exists.
 4. Use `git worktree list --porcelain` to verify whether a worktree exists.
 5. If there is a failed pending card but no thread ID, assume setup failed and create a fresh correctly configured worktree thread.
+
+The sidebar is a convenience view, not the source of truth. An unpinned worktree thread may briefly appear, disappear, and reappear as the app reconciles pending worktree setup, active/idle status, project grouping, search state, or sidebar rendering. That flicker is acceptable only when:
+
+- `list_threads` returns the thread ID.
+- The `codex://threads/<thread-id>` link opens the thread.
+- `git worktree list --porcelain` shows the corresponding worktree.
+- The thread status is sensible, for example `active` while running or `idle` after completion.
+
+It is not acceptable if the thread has no ID, cannot be found by app search, cannot be opened by direct link, and has no Git worktree. Treat that case as failed creation, not hidden background work.
 
 ## Visibility Test On 2026-06-21
 
@@ -117,4 +150,29 @@ Outcome:
 - `create_thread` first returned a `pendingWorktreeId`, then the thread appeared in `list_threads` with a real thread ID and worktree cwd.
 - Detached HEAD is confirmed as the normal Codex-managed worktree state.
 - No files were edited, no commits were created, no `.env` was read, and no network calls were run.
-- This test should remain unpinned until the user confirms whether it appears naturally under the Quackathon project section in the Codex app UI.
+- This test was intentionally left unpinned to test natural project visibility.
+- The user observed that the sidebar entry appeared, disappeared, and reappeared. The app registry still returned the thread as `idle`, so the correct interpretation is sidebar flicker/reconciliation rather than lost work.
+
+## Orchestrator Review Lessons
+
+The attached prior-project orchestration summary reinforced these process rules:
+
+- Split work only after source-of-truth docs and contracts are clear.
+- Assign narrow file ownership per worker to prevent merge chaos.
+- Require structured handoffs from every worker: thread ID, worktree, branch or detached state, files changed, commands run, tests run, risks, and integration notes.
+- Treat worker summaries as claims, not proof. The master session must inspect diffs, logs, status, and tests before merging.
+- Use `multi_tool_use.parallel` for independent read-only checks, but keep writes, merges, commits, and pushes serialized.
+- Prefer integration branches or integration worktrees when combining risky changes.
+- Verify the integrated product, not just isolated worker success.
+- Preserve evidence for hackathon-critical integrations: commits, health checks, provider status, screenshots or local QA notes, and reasons for rejecting unsafe generated PRs.
+- Do not equate "many sessions running" with good orchestration. The value is clear contracts, isolated ownership, skeptical review, and real verification.
+
+For pushing from an isolated worktree directly to a shared branch, the prior project used a fast-forward discipline:
+
+```bash
+git fetch origin main
+git merge-base --is-ancestor origin/main HEAD
+git push origin HEAD:main
+```
+
+For this project, the master session should prefer reviewing and merging into local `main` first when practical. Direct `HEAD:main` pushes are allowed only when the branch has been reviewed, the fast-forward check passes, and dirty local checkout state would otherwise make a normal local merge less reliable.

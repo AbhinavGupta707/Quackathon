@@ -539,6 +539,8 @@ Do not use sub-agents for implementation work.
 
 Use actual Codex threads/sessions with isolated Git worktrees. Prefer the Codex app thread tools (`list_projects`, then `create_thread` with `environment.type = "worktree"`) over sub-agent tooling.
 
+Codex app-managed worktree threads are the default for this project because they are visible, searchable, and monitorable inside the Codex app. Manual project-local `.worktrees/...` checkouts are allowed only as an explicit fallback when branch/location control matters more than native app visibility; see `docs/CODEX_ORCHESTRATION_RESEARCH.md`.
+
 The master session should:
 
 1. Create a new Codex thread for each substantial lane.
@@ -588,6 +590,7 @@ Visibility protocol:
 - Report the deep link `codex://threads/<thread-id>` to the user for each active spawned session.
 - Tell the user to use thread search (`Cmd+G` on macOS) for the title, branch/lane label, or thread ID if a worktree thread is not visible in the current project list.
 - If only a failed pending worktree card exists and no thread ID is returned by `list_threads`, do not assume there is hidden work. Fix the starting ref or setup error and create a fresh visible thread.
+- Treat the app sidebar as a convenience view, not the source of truth. A thread is real when it has a thread ID in `list_threads`, opens by `codex://threads/<thread-id>`, and has the expected Git worktree registration.
 
 Each worktree session prompt must include:
 
