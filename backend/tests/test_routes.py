@@ -82,3 +82,5 @@ def test_health_reports_provider_state() -> None:
     assert payload["services"]["afferens"]["state"] == "degraded"
     assert "Use /api/afferens/status" in payload["services"]["afferens"]["message"]
     assert payload["services"]["database"]["state"] == "degraded"
+    assert payload["services"]["fireworks"]["state"] == "degraded"
+    assert payload["services"]["langgraph"]["state"] in {"ok", "degraded"}

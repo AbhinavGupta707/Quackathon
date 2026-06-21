@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from app.afferens_adapter import AfferensAdapter
 from app.routes.dependencies import get_afferens_adapter, get_data_spine_service
@@ -9,9 +9,6 @@ from app.schemas import (
     ObjectsLastSeenResponse,
     PerceptionSyncRequest,
     PerceptionSyncResponse,
-    TaskState,
-    TaskType,
-    TasksResponse,
 )
 from app.services import DataSpineService
 
@@ -55,12 +52,3 @@ async def objects_last_seen(
     service: DataSpineService = Depends(get_data_spine_service),
 ) -> ObjectsLastSeenResponse:
     return ObjectsLastSeenResponse(objects=service.list_last_seen_objects())
-
-
-@router.get("/api/tasks", response_model=TasksResponse)
-async def tasks(
-    state: TaskState | None = Query(default=None),
-    type: TaskType | None = Query(default=None),
-    service: DataSpineService = Depends(get_data_spine_service),
-) -> TasksResponse:
-    return TasksResponse(tasks=service.list_tasks(state=state, task_type=type))
