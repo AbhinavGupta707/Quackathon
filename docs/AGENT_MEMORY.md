@@ -40,7 +40,7 @@ The master session:
 - Immediately sets a clear title, records thread IDs, and shares `codex://threads/<thread-id>` links so the user can monitor sessions in the Codex app.
 - Does not rely on pinning for visibility. Pin only when the user wants it or when a long-running important worktree needs cleanup protection.
 - Assigns non-overlapping file ownership.
-- Monitors progress.
+- Monitors spawned sessions roughly every five minutes unless there is a specific reason to check sooner.
 - Reviews diffs and tests.
 - Merges carefully.
 - Runs integration checks.
@@ -72,6 +72,7 @@ Optional Checkpoint 4: Live CV Enrichment
 - `.env.example` exists.
 - `.gitignore` ignores env files.
 - Git is initialized and connected to `https://github.com/AbhinavGupta707/Quackathon.git`.
+- `main` is synced to `origin/main` after the Checkpoint 2 code-complete merge.
 - `.agents/` could not be created due workspace permissions, so this file and root `AGENTS.md` are the local memory surface.
 - An accidental sub-agent run was stopped. Its unmerged output is quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`; do not integrate it unless the user explicitly asks.
 
@@ -94,20 +95,23 @@ Merged results on `main`:
 - Frontend now has a dense live memory console with sync feedback, latest observation/evidence display, object memory table, ask UI evidence states, active task console, and honest unavailable states.
 - Integrated checks after merge: backend `python3 -m pytest` passed with 21 tests; frontend `npm run lint` passed; frontend `npm run build` passed.
 
-Checkpoint 2 batch 2 backend/docs pass:
+Checkpoint 2 batch 2 backend/docs/frontend pass:
 
 - Merged backend query workflow through `ws/c2-backend-query-workflow`.
 - Backend now has `/api/query`, Fireworks structured reasoning adapter, LangGraph object-recovery workflow wrapper with deterministic fallback, `/api/tasks/{task_id}/verify`, `/api/tasks/{task_id}/resolve`, `/api/alerts`, `/api/alerts/{alert_id}/ack`, and a real Alembic durable schema migration.
 - Query answers must remain evidence-backed: current live observation first, durable memory second, no invented locations.
 - Task verification must fetch fresh live Afferens data and sync through the normalizer before deciding verified/not_verified/inconclusive.
 - Merged runtime docs through `ws/c2-devex-runtime-docs`, then reconciled docs with the implemented backend endpoints.
+- Merged frontend resolution integration through `ws/c2-frontend-resolution-integration`.
+- Frontend task verify, human resolve, and alert acknowledgement controls are wired to live backend endpoints on `main`.
 
-Remaining Checkpoint 2 gaps:
+Checkpoint 2 completion state:
 
-- Frontend task verify/resolve controls and alert acknowledgement are wired on `main` through `ws/c2-frontend-resolution-integration`.
+- Code-complete for evidence-backed memory, object recovery, task resolution, and alert acknowledgement.
+- Integrated checks passed after final merge: backend tests, backend compile, frontend lint, frontend typecheck, frontend build, and whitespace diff check.
 - Full local live Afferens plus Fireworks smoke test has not been run.
 
-Next recommended worktree batch:
+Next recommended step:
 
-- Integrated main checks after merge: backend tests, backend compile, frontend lint, frontend typecheck/build.
-- Manual checkpoint after that: run local DB migration, start backend/frontend, connect live Afferens node, sync/query/verify/ack with real API keys.
+- First choice: run the Checkpoint 2 live smoke manually with local keys and an Afferens node.
+- After live smoke passes or known issues are fixed, proceed to Checkpoint 3: safety, actuation, caregiver UX, evidence inspector, and hardening.

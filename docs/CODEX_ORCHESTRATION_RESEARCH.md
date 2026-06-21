@@ -73,9 +73,20 @@ For future batches:
 9. Confirm Git worktree registration with `git worktree list --porcelain`.
 10. Report the `codex://threads/<thread-id>` link to the user.
 11. Do not rely on pinning for visibility. Pin only when the user wants it or when an important long-running worktree needs cleanup protection.
-12. Monitor the visible thread with `read_thread` or by opening the app thread.
+12. Monitor the visible thread with `read_thread` or by opening the app thread roughly every five minutes during active batches.
 13. Create a Git branch only when the work needs to be committed or pushed from the worktree.
 14. Use Handoff if the work should be brought back into the foreground checkout.
+
+## Recommended Workflow
+
+Use a hybrid workflow for this project:
+
+- The master session owns architecture, cross-cutting decisions, live debugging, final integration, and merge review.
+- Visible Codex app worktree sessions are worth using only for substantial, separable lanes with narrow file ownership.
+- Do not spawn sessions for small doc edits, simple integration fixes, or code review that is cheaper and safer in the master session.
+- Manual user-created sessions are a fallback only if app-managed worktree creation or visibility breaks.
+- Parallelism is valuable only when the contracts are clear enough that workers can avoid touching the same files.
+- During active parallel batches, check worker progress about every five minutes, then inspect completed diffs and rerun verification in the master checkout before merging.
 
 ## App-Managed Versus Manual Worktrees
 
@@ -166,6 +177,19 @@ The attached prior-project orchestration summary reinforced these process rules:
 - Verify the integrated product, not just isolated worker success.
 - Preserve evidence for hackathon-critical integrations: commits, health checks, provider status, screenshots or local QA notes, and reasons for rejecting unsafe generated PRs.
 - Do not equate "many sessions running" with good orchestration. The value is clear contracts, isolated ownership, skeptical review, and real verification.
+
+Future worker prompts should follow the project-tested structure:
+
+- Repository and workstream name.
+- Statement that the worker is a full Codex worktree session, not a sub-agent.
+- First-read source files.
+- Goal.
+- Owned files/directories.
+- Files/directories not to edit.
+- Requirements and product constraints.
+- Verification commands.
+- Commit/clean-worktree expectation.
+- Required final handoff fields.
 
 For pushing from an isolated worktree directly to a shared branch, the prior project used a fast-forward discipline:
 

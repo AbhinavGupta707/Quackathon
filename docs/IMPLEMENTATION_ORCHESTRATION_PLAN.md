@@ -526,7 +526,7 @@ The current session acts as master orchestrator. It should work in loops:
 4. Create only substantial Codex worktree sessions.
 5. Give each session a clear title and record its thread ID, `codex://threads/<thread-id>` link, worktree path, logical lane, ownership, and status.
 6. Assign each session explicit file ownership.
-7. Monitor progress every few minutes through app thread tools and user-visible thread links.
+7. Monitor progress about every five minutes through app thread tools and user-visible thread links.
 8. Review each completed session's diff, tests, and notes.
 9. Merge in a controlled order.
 10. Run integration tests and fix integration issues.
@@ -594,12 +594,17 @@ Visibility protocol:
 
 Each worktree session prompt must include:
 
+- Repository/context.
+- Workstream name.
+- First-read source files.
+- Goal.
 - Checkpoint target.
-- File ownership.
-- Explicit files/directories to avoid.
-- Required commands/tests.
-- Expected deliverables.
-- Completion report format.
+- Owned files/directories.
+- Explicit files/directories not to edit.
+- Requirements and product constraints.
+- Verification commands/tests.
+- Commit and clean-worktree expectation.
+- Required final handoff format.
 - No-secrets rule.
 - Live-only runtime rule.
 - Explicit instruction that it is an isolated worktree session, not a sub-agent.
@@ -682,7 +687,8 @@ Status after second Batch 2 execution pass:
 - Completed and merged: Backend Query Workflow lane with `/api/query`, Fireworks adapter, LangGraph object-recovery workflow wrapper, task verification/resolution, alert list/ack endpoints, and Alembic migration.
 - Completed and merged: Runtime docs/devex lane, then master reconciliation after backend query workflow landed.
 - Completed and merged: Frontend Resolution Integration lane with task verify, human resolve, and alert acknowledgement controls.
-- Still required: integrated live smoke testing.
+- Checkpoint 2 is code-complete on `main`.
+- Still required before calling the product live-validated: integrated live smoke testing with local Postgres, backend, frontend, Fireworks config if available, and a live Afferens node.
 
 Completed Worktree Session A: Data And Memory
 
@@ -712,11 +718,10 @@ Completed Worktree Session D: Frontend Resolution Integration
 
 Master:
 
-- Integrates memory sync flow.
-- Runs full integrated checks.
-- Runs live Afferens sync/query/verify/ack smoke test once local keys and node are available.
-- Resolves schema/API mismatches.
-- Runs backend `python3 -m pytest`, frontend `npm run lint`, and frontend `npm run build` after each merge batch.
+- Integrated memory sync, query, task verification/resolution, and alert acknowledgement.
+- Ran full integrated checks after the final Checkpoint 2 merge: backend tests, backend compile, frontend lint, frontend typecheck, frontend build, and whitespace diff check.
+- Still must run live Afferens sync/query/verify/ack smoke test once local keys and node are available.
+- Resolves any schema/API mismatches found during live smoke before proceeding deeply into Checkpoint 3.
 
 ### Batch 3: Reach Checkpoint 3
 
