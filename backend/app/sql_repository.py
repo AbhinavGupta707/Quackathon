@@ -13,7 +13,10 @@ from app.models import (
     DetectedObjectRecord,
     LastSeenObjectRecord,
     ObservationRecord,
+    QueryRecord as QueryRecordModel,
+    TaskEventRecord,
     TaskRecord,
+    VerificationCheckRecord,
 )
 from app.repositories import DataRepository
 from app.schemas import (
@@ -25,9 +28,11 @@ from app.schemas import (
     LastSeenObject,
     LastSeenStatus,
     Observation,
+    QueryLog,
     Task,
     TaskState,
     TaskType,
+    VerificationCheck,
     utc_now,
 )
 
@@ -143,6 +148,7 @@ class SQLAlchemyDataRepository(DataRepository):
                     body=task.body,
                     recommended_action=task.recommended_action,
                     evidence_observation_ids=task.evidence_observation_ids,
+                    metadata_json=task.metadata,
                     created_at=task.created_at,
                     updated_at=task.updated_at,
                     resolved_at=task.resolved_at,
@@ -150,6 +156,25 @@ class SQLAlchemyDataRepository(DataRepository):
             )
             session.commit()
         return task
+
+    def create_query(self, query: QueryLog) -> QueryLog:
+        with self._session_factory() as session:
+            session.add(
+                QueryRecordModel(
+                    id=query.id,
+                    query_text=query.query_text,
+                    session_id=query.session_id,
+                    intent=query.intent.value if query.intent else None,
+                    answer=query.answer,
+                    confidence=query.confidence.value if query.confidence else None,
+                    evidence_observation_ids=query.evidence_observation_ids,
+                    task_id=query.task_id,
+                    provider=query.provider,
+                    created_at=query.created_at,
+                )
+            )
+            session.commit()
+        return query
 
     def create_alert(self, alert: Alert) -> Alert:
         with self._session_factory() as session:
@@ -168,6 +193,143 @@ class SQLAlchemyDataRepository(DataRepository):
                     acknowledged_at=alert.acknowledged_at,
                 )
             )
+            session.commit()
+        return alert
+
+    def get_task(self, task_id: str) -> Task | None:
+        with self._session_factory() as session:
+            record = session.get(TaskRecord, task_id)
+            return self._task_from_record(record) if record else None
+
+    def update_task(self, task: Task) -> Task:
+        with self._session_factory() as session:
+            record = session.get(TaskRecord, task.id)
+            if record is None:
+                session.add(
+                    TaskRecord(
+                        id=task.id,
+                        type=task.type.value,
+                        state=task.state.value,
+                        title=task.title,
+                        body=task.body,
+                        recommended_action=task.recommended_action,
+                        evidence_observation_ids=task.evidence_observation_ids,
+                        metadata_json=task.metadata,
+                        created_at=task.created_at,
+                        updated_at=task.updated_at,
+                        resolved_at=task.resolved_at,
+                    )
+                )
+            else:
+                record.type = task.type.value
+                record.state = task.state.value
+                record.title = task.title
+                record.body = task.body
+                record.recommended_action = task.recommended_action
+                record.evidence_observation_ids = task.evidence_observation_ids
+                record.metadata_json = task.metadata
+                record.updated_at = task.updated_at
+                record.resolved_at = task.resolved_at
+            session.commit()
+        return task
+
+    def add_task_event(
+        self,
+        *,
+        task_id: str,
+        event_type: str,
+        message: str,
+        evidence_observation_ids: list[str] | None = None,
+    ) -> None:
+        with self._session_factory() as session:
+            session.add(
+                TaskEventRecord(
+                    id=new_id("taskevt"),
+                    task_id=task_id,
+                    event_type=event_type,
+                    message=message,
+                    evidence_observation_ids=list(evidence_observation_ids or []),
+                    created_at=utc_now(),
+                )
+            )
+            session.commit()
+
+    def find_open_object_recovery_task(self, object_key: str) -> Task | None:
+        open_states = {
+            TaskState.OPEN.value,
+            TaskState.WAITING_FOR_HUMAN.value,
+            TaskState.VERIFICATION_PENDING.value,
+            TaskState.FAILED_VERIFICATION.value,
+        }
+        stmt = (
+            select(TaskRecord)
+            .where(TaskRecord.type == TaskType.OBJECT_RECOVERY.value)
+            .where(TaskRecord.state.in_(open_states))
+            .order_by(desc(TaskRecord.created_at))
+        )
+        with self._session_factory() as session:
+            for record in session.scalars(stmt).all():
+                if (record.metadata_json or {}).get("object_key") == object_key:
+                    return self._task_from_record(record)
+        return None
+
+    def create_verification_check(self, check: VerificationCheck) -> VerificationCheck:
+        with self._session_factory() as session:
+            session.add(
+                VerificationCheckRecord(
+                    id=check.id,
+                    task_id=check.task_id,
+                    observation_id=check.observation_id,
+                    state=check.state.value,
+                    message=check.message,
+                    evidence_observation_ids=check.evidence_observation_ids,
+                    created_at=check.created_at,
+                )
+            )
+            session.commit()
+        return check
+
+    def list_alerts(self, *, status: AlertStatus | None = None) -> list[Alert]:
+        stmt: Select[tuple[AlertRecord]] = select(AlertRecord).order_by(desc(AlertRecord.created_at))
+        if status is not None:
+            stmt = stmt.where(AlertRecord.status == status.value)
+        with self._session_factory() as session:
+            return [self._alert_from_record(record) for record in session.scalars(stmt).all()]
+
+    def get_alert(self, alert_id: str) -> Alert | None:
+        with self._session_factory() as session:
+            record = session.get(AlertRecord, alert_id)
+            return self._alert_from_record(record) if record else None
+
+    def update_alert(self, alert: Alert) -> Alert:
+        with self._session_factory() as session:
+            record = session.get(AlertRecord, alert.id)
+            if record is None:
+                session.add(
+                    AlertRecord(
+                        id=alert.id,
+                        task_id=alert.task_id,
+                        hazard_type=alert.hazard_type,
+                        severity=alert.severity.value,
+                        title=alert.title,
+                        body=alert.body,
+                        recommended_action=alert.recommended_action,
+                        status=alert.status.value,
+                        evidence_observation_ids=alert.evidence_observation_ids,
+                        created_at=alert.created_at,
+                        acknowledged_at=alert.acknowledged_at,
+                    )
+                )
+            else:
+                record.task_id = alert.task_id
+                record.hazard_type = alert.hazard_type
+                record.severity = alert.severity.value
+                record.title = alert.title
+                record.body = alert.body
+                record.recommended_action = alert.recommended_action
+                record.status = alert.status.value
+                record.evidence_observation_ids = alert.evidence_observation_ids
+                record.acknowledged_at = alert.acknowledged_at
             session.commit()
         return alert
 
@@ -263,9 +425,26 @@ class SQLAlchemyDataRepository(DataRepository):
             body=record.body,
             recommended_action=record.recommended_action,
             evidence_observation_ids=record.evidence_observation_ids,
+            metadata=record.metadata_json or {},
             created_at=record.created_at,
             updated_at=record.updated_at,
             resolved_at=record.resolved_at,
+        )
+
+    @staticmethod
+    def _alert_from_record(record: AlertRecord) -> Alert:
+        return Alert(
+            id=record.id,
+            task_id=record.task_id,
+            hazard_type=record.hazard_type,
+            severity=AlertSeverity(record.severity),
+            title=record.title,
+            body=record.body,
+            recommended_action=record.recommended_action,
+            status=AlertStatus(record.status),
+            evidence_observation_ids=record.evidence_observation_ids,
+            created_at=record.created_at,
+            acknowledged_at=record.acknowledged_at,
         )
 
     @staticmethod

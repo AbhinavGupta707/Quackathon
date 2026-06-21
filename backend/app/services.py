@@ -6,7 +6,17 @@ from typing import Any
 from app.memory import ObjectMemoryService
 from app.normalizer import AfferensObservationNormalizer
 from app.repositories import DataRepository
-from app.schemas import Alert, LastSeenObject, Observation, Task, TaskState, TaskType
+from app.schemas import (
+    Alert,
+    AlertStatus,
+    LastSeenObject,
+    Observation,
+    QueryLog,
+    Task,
+    TaskState,
+    TaskType,
+    VerificationCheck,
+)
 from app.tasks import TaskCreationService
 
 
@@ -67,3 +77,45 @@ class DataSpineService:
         task_type: TaskType | None = None,
     ) -> list[Task]:
         return self._repository.list_tasks(state=state, task_type=task_type)
+
+    def create_query(self, query: QueryLog) -> QueryLog:
+        return self._repository.create_query(query)
+
+    def create_task(self, task: Task) -> Task:
+        return self._repository.create_task(task)
+
+    def get_task(self, task_id: str) -> Task | None:
+        return self._repository.get_task(task_id)
+
+    def update_task(self, task: Task) -> Task:
+        return self._repository.update_task(task)
+
+    def add_task_event(
+        self,
+        *,
+        task_id: str,
+        event_type: str,
+        message: str,
+        evidence_observation_ids: list[str] | None = None,
+    ) -> None:
+        self._repository.add_task_event(
+            task_id=task_id,
+            event_type=event_type,
+            message=message,
+            evidence_observation_ids=evidence_observation_ids,
+        )
+
+    def find_open_object_recovery_task(self, object_key: str) -> Task | None:
+        return self._repository.find_open_object_recovery_task(object_key)
+
+    def create_verification_check(self, check: VerificationCheck) -> VerificationCheck:
+        return self._repository.create_verification_check(check)
+
+    def list_alerts(self, *, status: AlertStatus | None = None) -> list[Alert]:
+        return self._repository.list_alerts(status=status)
+
+    def get_alert(self, alert_id: str) -> Alert | None:
+        return self._repository.get_alert(alert_id)
+
+    def update_alert(self, alert: Alert) -> Alert:
+        return self._repository.update_alert(alert)

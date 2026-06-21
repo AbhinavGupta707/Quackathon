@@ -5,12 +5,15 @@ from typing import Any, Protocol
 from app.ids import new_id
 from app.schemas import (
     Alert,
+    AlertStatus,
     LastSeenObject,
     LastSeenStatus,
     Observation,
+    QueryLog,
     Task,
     TaskState,
     TaskType,
+    VerificationCheck,
 )
 
 
@@ -24,6 +27,31 @@ class DataRepository(Protocol):
     def create_task(self, task: Task) -> Task: ...
 
     def create_alert(self, alert: Alert) -> Alert: ...
+
+    def create_query(self, query: QueryLog) -> QueryLog: ...
+
+    def get_task(self, task_id: str) -> Task | None: ...
+
+    def update_task(self, task: Task) -> Task: ...
+
+    def add_task_event(
+        self,
+        *,
+        task_id: str,
+        event_type: str,
+        message: str,
+        evidence_observation_ids: list[str] | None = None,
+    ) -> None: ...
+
+    def find_open_object_recovery_task(self, object_key: str) -> Task | None: ...
+
+    def create_verification_check(self, check: VerificationCheck) -> VerificationCheck: ...
+
+    def list_alerts(self, *, status: AlertStatus | None = None) -> list[Alert]: ...
+
+    def get_alert(self, alert_id: str) -> Alert | None: ...
+
+    def update_alert(self, alert: Alert) -> Alert: ...
 
     def latest_observation(self) -> Observation | None: ...
 
@@ -46,6 +74,9 @@ class InMemoryDataRepository:
         self.last_seen: dict[str, LastSeenObject] = {}
         self.tasks: dict[str, Task] = {}
         self.alerts: dict[str, Alert] = {}
+        self.queries: dict[str, QueryLog] = {}
+        self.task_events: list[dict[str, Any]] = []
+        self.verification_checks: dict[str, VerificationCheck] = {}
 
     def persist_raw_event(self, raw_event: dict[str, Any]) -> str:
         provider_event_id = self._provider_event_id(raw_event)
@@ -91,6 +122,67 @@ class InMemoryDataRepository:
         return task
 
     def create_alert(self, alert: Alert) -> Alert:
+        self.alerts[alert.id] = alert
+        return alert
+
+    def create_query(self, query: QueryLog) -> QueryLog:
+        self.queries[query.id] = query
+        return query
+
+    def get_task(self, task_id: str) -> Task | None:
+        return self.tasks.get(task_id)
+
+    def update_task(self, task: Task) -> Task:
+        self.tasks[task.id] = task
+        return task
+
+    def add_task_event(
+        self,
+        *,
+        task_id: str,
+        event_type: str,
+        message: str,
+        evidence_observation_ids: list[str] | None = None,
+    ) -> None:
+        self.task_events.append(
+            {
+                "task_id": task_id,
+                "event_type": event_type,
+                "message": message,
+                "evidence_observation_ids": list(evidence_observation_ids or []),
+            }
+        )
+
+    def find_open_object_recovery_task(self, object_key: str) -> Task | None:
+        open_states = {
+            TaskState.OPEN,
+            TaskState.WAITING_FOR_HUMAN,
+            TaskState.VERIFICATION_PENDING,
+            TaskState.FAILED_VERIFICATION,
+        }
+        candidates = [
+            task
+            for task in self.tasks.values()
+            if task.type == TaskType.OBJECT_RECOVERY
+            and task.state in open_states
+            and task.metadata.get("object_key") == object_key
+        ]
+        return max(candidates, key=lambda item: item.created_at) if candidates else None
+
+    def create_verification_check(self, check: VerificationCheck) -> VerificationCheck:
+        self.verification_checks[check.id] = check
+        return check
+
+    def list_alerts(self, *, status: AlertStatus | None = None) -> list[Alert]:
+        alerts = list(self.alerts.values())
+        if status is not None:
+            alerts = [alert for alert in alerts if alert.status == status]
+        return sorted(alerts, key=lambda item: item.created_at, reverse=True)
+
+    def get_alert(self, alert_id: str) -> Alert | None:
+        return self.alerts.get(alert_id)
+
+    def update_alert(self, alert: Alert) -> Alert:
         self.alerts[alert.id] = alert
         return alert
 

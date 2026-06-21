@@ -53,6 +53,24 @@ class Settings(BaseSettings):
         le=30,
         validation_alias="DATABASE_CONNECT_TIMEOUT_SECONDS",
     )
+    fireworks_base_url: AnyHttpUrl = Field(
+        default="https://api.fireworks.ai/inference/v1",
+        validation_alias="FIREWORKS_BASE_URL",
+    )
+    fireworks_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="FIREWORKS_API_KEY",
+    )
+    fireworks_model: str = Field(
+        default="accounts/fireworks/models/deepseek-v3p1",
+        validation_alias="FIREWORKS_MODEL",
+    )
+    fireworks_timeout_seconds: float = Field(
+        default=20.0,
+        ge=0.1,
+        le=120.0,
+        validation_alias="FIREWORKS_TIMEOUT_SECONDS",
+    )
 
     @field_validator("environment")
     @classmethod
@@ -82,6 +100,16 @@ class Settings(BaseSettings):
         if not self.database_configured or self.database_url is None:
             return None
         return self.database_url.get_secret_value().strip()
+
+    @property
+    def fireworks_configured(self) -> bool:
+        key = self.fireworks_api_key
+        return bool(key and key.get_secret_value().strip())
+
+    def fireworks_key_value(self) -> str | None:
+        if not self.fireworks_configured or self.fireworks_api_key is None:
+            return None
+        return self.fireworks_api_key.get_secret_value().strip()
 
 
 @lru_cache

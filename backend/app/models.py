@@ -116,9 +116,13 @@ class QueryRecord(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     query_text: Mapped[str] = mapped_column(Text)
+    session_id: Mapped[str | None] = mapped_column(String(255), index=True)
     intent: Mapped[str | None] = mapped_column(String(128), index=True)
     answer: Mapped[str | None] = mapped_column(Text)
+    confidence: Mapped[str | None] = mapped_column(String(64), index=True)
     evidence_observation_ids: Mapped[list[str]] = mapped_column(json_type, default=list)
+    task_id: Mapped[str | None] = mapped_column(ForeignKey("tasks.id"), index=True)
+    provider: Mapped[str | None] = mapped_column(String(128), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
@@ -132,6 +136,7 @@ class TaskRecord(Base):
     body: Mapped[str] = mapped_column(Text)
     recommended_action: Mapped[str] = mapped_column(Text)
     evidence_observation_ids: Mapped[list[str]] = mapped_column(json_type, default=list)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

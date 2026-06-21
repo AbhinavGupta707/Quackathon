@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.routes import afferens, health, perception
+from app.routes import afferens, alerts, health, perception, query, tasks
 
 
 def create_app() -> FastAPI:
@@ -26,6 +26,9 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(afferens.router)
     app.include_router(perception.router)
+    app.include_router(query.router)
+    app.include_router(tasks.router)
+    app.include_router(alerts.router)
 
     return app
 

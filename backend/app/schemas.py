@@ -82,6 +82,19 @@ class LastSeenStatus(StrEnum):
     UNKNOWN = "unknown"
 
 
+class QueryIntent(StrEnum):
+    OBJECT_LOCATION = "object_location"
+    RECENT_ACTIVITY = "recent_activity"
+    SAFETY_STATUS = "safety_status"
+    UNKNOWN = "unknown"
+
+
+class QueryConfidence(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 class TaskType(StrEnum):
     OBJECT_RECOVERY = "object_recovery"
     SAFETY_ALERT = "safety_alert"
@@ -109,6 +122,12 @@ class AlertStatus(StrEnum):
     ACKNOWLEDGED = "acknowledged"
     DISMISSED = "dismissed"
     RESOLVED = "resolved"
+
+
+class VerificationState(StrEnum):
+    VERIFIED = "verified"
+    NOT_VERIFIED = "not_verified"
+    INCONCLUSIVE = "inconclusive"
 
 
 class DetectedObject(BaseModel):
@@ -164,6 +183,7 @@ class Task(BaseModel):
     body: str
     recommended_action: str
     evidence_observation_ids: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
     resolved_at: datetime | None = None
@@ -214,3 +234,123 @@ class ObjectsLastSeenResponse(BaseModel):
 
 class TasksResponse(BaseModel):
     tasks: list[Task] = Field(default_factory=list)
+
+
+class QueryRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=800)
+    session_id: str | None = Field(default=None, max_length=255)
+
+    @field_validator("query")
+    @classmethod
+    def normalize_query(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("query must not be blank")
+        return normalized
+
+    @field_validator("session_id")
+    @classmethod
+    def normalize_session_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    confidence: QueryConfidence
+    intent: QueryIntent
+    used_current_perception: bool
+    used_memory: bool
+    needs_human_verification: bool
+    evidence_observation_ids: list[str] = Field(default_factory=list)
+    task_id: str | None = None
+    safety_disclaimer: str = "This is an assistive prototype. Please verify important items in person."
+
+
+class QueryLog(BaseModel):
+    id: str
+    query_text: str
+    session_id: str | None = None
+    intent: QueryIntent | None = None
+    answer: str | None = None
+    confidence: QueryConfidence | None = None
+    evidence_observation_ids: list[str] = Field(default_factory=list)
+    task_id: str | None = None
+    provider: str | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class VerificationCheck(BaseModel):
+    id: str
+    task_id: str
+    observation_id: str | None = None
+    state: VerificationState
+    message: str
+    evidence_observation_ids: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class TaskVerifyRequest(BaseModel):
+    room_id: str = Field(default="default_home_zone", min_length=1, max_length=120)
+
+    @field_validator("room_id")
+    @classmethod
+    def normalize_room_id(cls, value: str) -> str:
+        normalized = value.strip()
+        return normalized or "default_home_zone"
+
+
+class TaskVerifyResponse(BaseModel):
+    ok: bool
+    task: Task
+    verification: VerificationCheck
+
+
+class TaskResolveRequest(BaseModel):
+    resolution_note: str = Field(min_length=1, max_length=1000)
+    resolved_by: str = Field(default="user", min_length=1, max_length=120)
+
+    @field_validator("resolution_note", "resolved_by")
+    @classmethod
+    def normalize_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("value must not be blank")
+        return normalized
+
+
+class TaskResolveResponse(BaseModel):
+    ok: bool
+    task: Task
+
+
+class AlertsResponse(BaseModel):
+    alerts: list[Alert] = Field(default_factory=list)
+
+
+class AlertAckRequest(BaseModel):
+    acknowledged_by: str = Field(default="caregiver", min_length=1, max_length=120)
+    note: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("acknowledged_by")
+    @classmethod
+    def normalize_acknowledged_by(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("acknowledged_by must not be blank")
+        return normalized
+
+    @field_validator("note")
+    @classmethod
+    def normalize_note(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class AlertAckResponse(BaseModel):
+    ok: bool
+    alert: Alert
