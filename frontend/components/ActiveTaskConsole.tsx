@@ -1,5 +1,6 @@
 import { formatDateTime, sentenceCase } from "@/lib/format";
 import type { Loadable, TasksResponse } from "@/lib/types";
+import { EvidenceRefs } from "./EvidenceRefs";
 import { Panel } from "./Panel";
 import { StateBlock } from "./StateBlock";
 import { StatusPill, type StatusTone } from "./StatusPill";
@@ -9,8 +10,9 @@ type ActiveTaskConsoleProps = {
 };
 
 export function ActiveTaskConsole({ tasks }: ActiveTaskConsoleProps) {
-  const activeTasks =
-    tasks.data?.tasks.filter((task) => !["verified_resolved", "dismissed"].includes(task.state)) ?? [];
+  const allTasks = tasks.data?.tasks ?? [];
+  const activeTasks = allTasks.filter((task) => !["verified_resolved", "dismissed"].includes(task.state));
+  const recentlyClosedTasks = allTasks.filter((task) => ["verified_resolved", "dismissed"].includes(task.state)).slice(0, 3);
 
   return (
     <Panel title="Active Task Console" eyebrow="Resolution Loop">
@@ -35,7 +37,7 @@ export function ActiveTaskConsole({ tasks }: ActiveTaskConsoleProps) {
                 <p>{task.body}</p>
                 {task.recommended_action ? <p className="recommended">{task.recommended_action}</p> : null}
               </div>
-              <dl>
+              <dl className="task-meta">
                 <div>
                   <dt>Type</dt>
                   <dd>{sentenceCase(task.type)}</dd>
@@ -46,13 +48,35 @@ export function ActiveTaskConsole({ tasks }: ActiveTaskConsoleProps) {
                 </div>
                 <div>
                   <dt>Evidence</dt>
-                  <dd>{task.evidence_observation_ids.join(", ") || "Not linked"}</dd>
+                  <dd>
+                    <EvidenceRefs ids={task.evidence_observation_ids} label={`Evidence for ${task.title}`} />
+                  </dd>
                 </div>
               </dl>
+              <div className="task-actions" aria-label={`Task controls for ${task.title}`}>
+                <button className="button button--secondary" type="button" disabled title="Backend verification endpoint is not wired in this UI yet.">
+                  Verify with live perception
+                </button>
+                <button className="button button--secondary" type="button" disabled title="Backend resolution endpoint is not wired in this UI yet.">
+                  Mark resolved
+                </button>
+              </div>
             </article>
           ))}
         </div>
       )}
+
+      {!tasks.loading && !tasks.error && recentlyClosedTasks.length > 0 ? (
+        <div className="closed-task-strip" aria-label="Recently closed tasks">
+          <h3>Recently closed</h3>
+          {recentlyClosedTasks.map((task) => (
+            <div className="closed-task" key={task.id}>
+              <span>{task.title}</span>
+              <StatusPill label={sentenceCase(task.state)} tone={toneForTask(task.state)} />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </Panel>
   );
 }

@@ -18,7 +18,7 @@ export function LiveStatusPanel({ health, afferens, onRefresh }: LiveStatusPanel
   return (
     <Panel
       title="Live System Status"
-      eyebrow="Checkpoint 1 Spine"
+      eyebrow="Live-Only Runtime"
       action={
         <button className="button button--secondary" type="button" onClick={onRefresh}>
           Refresh
@@ -52,7 +52,11 @@ export function LiveStatusPanel({ health, afferens, onRefresh }: LiveStatusPanel
               tone={afferensTone}
             />
           </div>
-          <p>{afferens.error || afferens.data?.message || "Waiting for /api/afferens/status."}</p>
+          <p>
+            {afferens.error ||
+              afferens.data?.message ||
+              "Waiting for /api/afferens/status. Memory and tasks remain unavailable until live evidence is present."}
+          </p>
           <dl>
             <div>
               <dt>Configured</dt>

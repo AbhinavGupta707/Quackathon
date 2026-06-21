@@ -1,5 +1,6 @@
 import { formatDateTime, sentenceCase } from "@/lib/format";
 import type { AlertsResponse, Loadable } from "@/lib/types";
+import { EvidenceRefs } from "./EvidenceRefs";
 import { Panel } from "./Panel";
 import { StateBlock } from "./StateBlock";
 import { StatusPill, type StatusTone } from "./StatusPill";
@@ -43,9 +44,16 @@ export function AlertQueue({ alerts }: AlertQueueProps) {
                 </div>
                 <div>
                   <dt>Evidence</dt>
-                  <dd>{alert.evidence_observation_ids.join(", ") || "Not linked"}</dd>
+                  <dd>
+                    <EvidenceRefs ids={alert.evidence_observation_ids} label={`Evidence for ${alert.title}`} />
+                  </dd>
                 </div>
               </dl>
+              <div className="task-actions" aria-label={`Alert controls for ${alert.title}`}>
+                <button className="button button--secondary" type="button" disabled title="Alert acknowledgement is reserved for Checkpoint 3 integration.">
+                  Acknowledge
+                </button>
+              </div>
             </article>
           ))}
         </div>

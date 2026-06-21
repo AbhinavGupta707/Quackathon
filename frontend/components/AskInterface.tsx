@@ -4,15 +4,17 @@ import { FormEvent, useState } from "react";
 import { askQuery } from "@/lib/api";
 import { sentenceCase } from "@/lib/format";
 import type { QueryResponse } from "@/lib/types";
+import { EvidenceRefs } from "./EvidenceRefs";
 import { Panel } from "./Panel";
 import { StateBlock } from "./StateBlock";
 import { StatusPill } from "./StatusPill";
 
 type AskInterfaceProps = {
   sessionId: string;
+  onAnswered?: () => void;
 };
 
-export function AskInterface({ sessionId }: AskInterfaceProps) {
+export function AskInterface({ sessionId, onAnswered }: AskInterfaceProps) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,9 @@ export function AskInterface({ sessionId }: AskInterfaceProps) {
     setResult(null);
 
     try {
-      setResult(await askQuery(trimmed, sessionId));
+      const response = await askQuery(trimmed, sessionId);
+      setResult(response);
+      onAnswered?.();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Query endpoint unavailable.");
     } finally {
@@ -66,10 +70,12 @@ export function AskInterface({ sessionId }: AskInterfaceProps) {
           <div className="row-heading">
             <StatusPill label={sentenceCase(result.confidence)} tone={result.confidence === "high" ? "good" : "warn"} />
             <StatusPill label={sentenceCase(result.intent)} tone="info" />
+            <StatusPill label={result.used_current_perception ? "Current perception" : "No current perception"} tone={result.used_current_perception ? "good" : "quiet"} />
+            <StatusPill label={result.used_memory ? "Memory used" : "Memory not used"} tone={result.used_memory ? "info" : "quiet"} />
             {result.needs_human_verification ? <StatusPill label="Human verification required" tone="warn" /> : null}
           </div>
           <p>{result.answer}</p>
-          <dl>
+          <dl className="answer-meta">
             <div>
               <dt>Current perception</dt>
               <dd>{result.used_current_perception ? "Used" : "Not used"}</dd>
@@ -80,10 +86,19 @@ export function AskInterface({ sessionId }: AskInterfaceProps) {
             </div>
             <div>
               <dt>Evidence</dt>
-              <dd>{result.evidence_observation_ids.join(", ") || "No evidence IDs returned"}</dd>
+              <dd>
+                <EvidenceRefs ids={result.evidence_observation_ids} label="Query evidence observations" />
+              </dd>
+            </div>
+            <div>
+              <dt>Task</dt>
+              <dd>{result.task_id || "No recovery task returned"}</dd>
             </div>
           </dl>
-          {result.safety_disclaimer ? <p className="disclaimer">{result.safety_disclaimer}</p> : null}
+          <p className="disclaimer">
+            {result.safety_disclaimer ||
+              "This is an assistive prototype. Please verify important items in person."}
+          </p>
         </div>
       ) : (
         <StateBlock
