@@ -540,9 +540,17 @@ The master session should:
 1. Create a new Codex thread for each substantial lane.
 2. Target the saved Quackathon project.
 3. Use a worktree environment.
-4. Start each worktree from `main` or an explicit `ws/...` branch.
-5. Give each session a clear branch/worktree name in its prompt.
-6. Keep a local table of thread IDs, branch names, ownership, and status.
+4. Start each worktree from current `main`, or from an explicit `ws/...` branch that already exists.
+5. Before passing `startingState.branchName`, verify it with `git rev-parse --verify <branch>`.
+6. If the branch does not exist, create it from current `main` first, or use `startingState.type = "working-tree"` and put the intended lane name in the prompt.
+7. Give each session a clear branch/worktree name in its prompt.
+8. Keep a local table of thread IDs, branch names, ownership, and status.
+
+Failure mode to avoid:
+
+- Codex app worktree creation currently treats `startingState.branchName` as an existing Git reference. It does not create a new branch from that string.
+- Passing a non-existent lane such as `ws/c1-frontend-shell` causes `git worktree add` to fail with `fatal: invalid reference`.
+- Diagnose this class of failure in layer order: check local refs and worktree registration first, then permissions or runtime issues.
 
 Naming convention:
 

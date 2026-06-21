@@ -30,6 +30,8 @@ The master session:
 
 - Plans the next checkpoint.
 - Creates isolated Codex worktree/branch sessions only for substantial work.
+- Verifies that any `startingState.branchName` passed to Codex thread creation already exists as a local Git ref. `branchName` is a starting reference, not a create-new-branch instruction.
+- Pre-creates missing lane branches from current `main`, or uses a working-tree start state and names the intended lane in the prompt.
 - Assigns non-overlapping file ownership.
 - Monitors progress.
 - Reviews diffs and tests.
