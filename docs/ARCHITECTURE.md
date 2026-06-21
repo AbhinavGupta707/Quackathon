@@ -17,11 +17,10 @@ Implemented:
 - Task listing, live verification, human resolution, alert listing, and alert acknowledgement.
 - Task and alert durable models plus Alembic migration.
 - Postgres + pgvector local service.
-- Next.js memory console for status, sync, latest evidence, object memory, ask shell, and active tasks.
+- Next.js memory console for status, sync, latest evidence, object memory, ask shell, active tasks, task resolution, and alert acknowledgement.
 
 Pending:
 
-- Frontend task verify/resolve and alert acknowledgement controls.
 - Alarm actuation endpoint.
 - Streaming event updates.
 - Full manual live Afferens plus Fireworks smoke test.

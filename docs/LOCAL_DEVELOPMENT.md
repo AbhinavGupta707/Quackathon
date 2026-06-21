@@ -33,11 +33,11 @@ Current frontend:
 - Object memory table.
 - Ask UI backed by `/api/query`.
 - Alert queue backed by `/api/alerts`.
-- Active task console.
+- Active task console with task verify/resolve controls.
+- Alert acknowledgement control.
 
 Pending product work:
 
-- Frontend task verify/resolve and alert acknowledgement controls.
 - Alarm actuation endpoint.
 - Streaming event updates.
 - Full manual live Afferens plus Fireworks smoke test.

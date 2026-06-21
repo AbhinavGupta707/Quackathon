@@ -16,15 +16,14 @@ Implemented on `main`:
 - Alembic migration for the durable memory schema.
 - Fireworks structured reasoning adapter and LangGraph object-recovery workflow wrapper, both with graceful fallback when unavailable.
 - Postgres + pgvector local Compose service.
-- Next.js memory console with live status, sync action, latest observation/evidence display, object memory table, query UI, alert queue, and active task console.
+- Next.js memory console with live status, sync action, latest observation/evidence display, object memory table, query UI, alert queue, active task console, task verify/resolve controls, and alert acknowledgement.
 
 Still pending:
 
-- Frontend buttons for task verify/resolve and alert acknowledgement.
 - Alarm actuation and streaming updates.
 - Full manual live Afferens plus Fireworks smoke test.
 
-The frontend can ask object-location questions and list alerts. Some action buttons remain disabled until the next frontend integration lane wires them to the backend action endpoints.
+The frontend can ask object-location questions, list alerts, verify tasks from live perception, record human resolution, and acknowledge alerts through the backend.
 
 ## Live-Only Rule
 

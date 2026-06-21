@@ -681,7 +681,8 @@ Status after second Batch 2 execution pass:
 - Completed and merged: Dashboard, Ask UI, And Active Tasks frontend lane.
 - Completed and merged: Backend Query Workflow lane with `/api/query`, Fireworks adapter, LangGraph object-recovery workflow wrapper, task verification/resolution, alert list/ack endpoints, and Alembic migration.
 - Completed and merged: Runtime docs/devex lane, then master reconciliation after backend query workflow landed.
-- Still required: frontend action controls for task verify/resolve and alert acknowledgement, then integrated live smoke testing.
+- Completed and merged: Frontend Resolution Integration lane with task verify, human resolve, and alert acknowledgement controls.
+- Still required: integrated live smoke testing.
 
 Completed Worktree Session A: Data And Memory
 
@@ -701,12 +702,13 @@ Completed Worktree Session C: Dashboard, Ask UI, And Active Tasks
 - Landed on `main` through `ws/c2-frontend-memory-query`.
 - Added evidence-aware memory console UX and honest unavailable states for not-yet-implemented endpoints.
 
-Next Worktree Session D: Frontend Resolution Integration
+Completed Worktree Session D: Frontend Resolution Integration
 
 - Owns `frontend/**` only.
-- Wire task verify, task resolve, and alert acknowledge controls to the implemented backend endpoints.
-- Refresh tasks/alerts after each action and keep honest loading/error states.
-- Run `npm run lint`, `npm run typecheck`, and `npm run build`.
+- Landed on `main` through `ws/c2-frontend-resolution-integration`.
+- Wired task verify, task resolve, and alert acknowledge controls to the implemented backend endpoints.
+- Refreshes tasks/alerts after each action and keeps honest loading/error states.
+- Checks passed in lane: `npm run lint`, `npm run typecheck`, and `npm run build`.
 
 Master:
 

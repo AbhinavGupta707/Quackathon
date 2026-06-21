@@ -104,12 +104,10 @@ Checkpoint 2 batch 2 backend/docs pass:
 
 Remaining Checkpoint 2 gaps:
 
-- Frontend task verify/resolve controls are still disabled.
-- Frontend alert acknowledgement control is still disabled.
+- Frontend task verify/resolve controls and alert acknowledgement are wired on `main` through `ws/c2-frontend-resolution-integration`.
 - Full local live Afferens plus Fireworks smoke test has not been run.
 
 Next recommended worktree batch:
 
-- Frontend Resolution Integration lane owning `frontend/**`: wire enabled controls for task verify, human resolve, and alert acknowledge against the implemented backend endpoints; refresh task/alert state after each action; run lint/typecheck/build.
 - Integrated main checks after merge: backend tests, backend compile, frontend lint, frontend typecheck/build.
 - Manual checkpoint after that: run local DB migration, start backend/frontend, connect live Afferens node, sync/query/verify/ack with real API keys.
