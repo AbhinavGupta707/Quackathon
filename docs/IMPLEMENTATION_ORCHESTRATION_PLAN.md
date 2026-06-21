@@ -543,13 +543,16 @@ The master session should:
 4. Start each worktree from current `main`, or from an explicit `ws/...` branch that already exists.
 5. Before passing `startingState.branchName`, verify it with `git rev-parse --verify <branch>`.
 6. If the branch does not exist, create it from current `main` first, or use `startingState.type = "working-tree"` and put the intended lane name in the prompt.
-7. Give each session a clear branch/worktree name in its prompt.
-8. Keep a local table of thread IDs, branch names, ownership, and status.
+7. After thread creation, verify `git worktree list --porcelain` to ensure the new worktree is registered and attached to the intended branch.
+8. If the new worktree is detached at the intended commit, immediately steer that session to `git switch <lane-branch>` before substantial edits or commits.
+9. Give each session a clear branch/worktree name in its prompt.
+10. Keep a local table of thread IDs, branch names, ownership, and status.
 
 Failure mode to avoid:
 
 - Codex app worktree creation currently treats `startingState.branchName` as an existing Git reference. It does not create a new branch from that string.
 - Passing a non-existent lane such as `ws/c1-frontend-shell` causes `git worktree add` to fail with `fatal: invalid reference`.
+- A successful worktree creation may still leave the checkout detached at the branch commit. That is workable for reads, but unsafe for isolated commits unless the session attaches to its lane branch.
 - Diagnose this class of failure in layer order: check local refs and worktree registration first, then permissions or runtime issues.
 
 Naming convention:

@@ -74,6 +74,7 @@ When parallelizing:
 - Use separate Codex worktree sessions and branches.
 - Before creating a Codex worktree session with `startingState.branchName`, verify that the branch/ref already exists. The Codex app treats `branchName` as an existing starting ref, not as a new branch name to create.
 - If a lane branch does not exist yet, create it from current `main` first, or create the thread from the working tree and put the intended lane name in the prompt.
+- After creation, verify `git worktree list --porcelain`. If a worktree is detached, steer that session to attach to its intended lane branch before substantial edits or commits.
 - Assign non-overlapping files.
 - Avoid concurrent edits to shared schemas, migrations, root config, or Docker Compose unless coordinated.
 - Require each session to report files changed, commands run, tests run, risks, and integration notes.

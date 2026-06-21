@@ -32,6 +32,7 @@ The master session:
 - Creates isolated Codex worktree/branch sessions only for substantial work.
 - Verifies that any `startingState.branchName` passed to Codex thread creation already exists as a local Git ref. `branchName` is a starting reference, not a create-new-branch instruction.
 - Pre-creates missing lane branches from current `main`, or uses a working-tree start state and names the intended lane in the prompt.
+- Checks Git worktree registration after creation. If a session is detached at the correct commit, steer it to switch/create the intended lane branch before substantial work or commits.
 - Assigns non-overlapping file ownership.
 - Monitors progress.
 - Reviews diffs and tests.
