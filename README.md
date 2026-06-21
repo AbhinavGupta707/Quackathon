@@ -62,10 +62,17 @@ Edit `.env` locally and set at least:
 
 ```text
 AFFERENS_API_KEY=...
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/afferens_memory_guardian
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/afferens_memory_guardian
 DATABASE_ENABLED=true
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
+
+If you run the backend on a non-default port, for example `8010`, also create `frontend/.env.local`:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8010
+```
+
+Restart `npm run dev` after changing `frontend/.env.local`; Next.js reads public env values when the dev server starts.
 
 Do not commit `.env`, print API keys, or include secrets in screenshots.
 

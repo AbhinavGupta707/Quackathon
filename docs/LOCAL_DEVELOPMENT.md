@@ -71,9 +71,16 @@ Edit `.env` locally. Required for the current data spine:
 ```text
 AFFERENS_API_KEY=...
 DATABASE_ENABLED=true
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/afferens_memory_guardian
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/afferens_memory_guardian
 ```
+
+The backend reads the root `.env`. The frontend is started from `frontend/`, so it needs its public API URL in `frontend/.env.local` when the backend does not run on the default `8000` port:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8010
+```
+
+Restart `npm run dev` after changing `frontend/.env.local`.
 
 Recommended for Checkpoint 2 query workflow work:
 
@@ -110,7 +117,7 @@ docker compose down
 The default local connection is:
 
 ```text
-postgresql://postgres:postgres@localhost:5432/afferens_memory_guardian
+postgresql+psycopg://postgres:postgres@localhost:5432/afferens_memory_guardian
 ```
 
 ## Backend
