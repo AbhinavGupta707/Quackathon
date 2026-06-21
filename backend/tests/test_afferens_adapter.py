@@ -80,6 +80,29 @@ async def test_fetch_latest_uses_live_perception_request_shape() -> None:
     assert result.raw_event is not None
 
 
+async def test_fetch_latest_uses_entity_id_as_latest_event_id() -> None:
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            json={
+                "events": [
+                    {
+                        "entity_id": "AFF-ENTITY-01",
+                        "timestamp_utc": "2026-06-21T16:00:00Z",
+                        "source_node_id": "NODE-01",
+                        "modality": "vision",
+                    }
+                ]
+            },
+        )
+    )
+
+    result = await AfferensAdapter(_settings(), transport=transport).fetch_latest()
+
+    assert result.status.state == AfferensConnectionState.LIVE
+    assert result.status.latest_event_id == "AFF-ENTITY-01"
+
+
 async def test_fetch_latest_empty_success_is_no_live_events() -> None:
     transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"events": []}))
 

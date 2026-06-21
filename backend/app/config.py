@@ -39,6 +39,20 @@ class Settings(BaseSettings):
         le=60.0,
         validation_alias="AFFERENS_TIMEOUT_SECONDS",
     )
+    database_url: SecretStr | None = Field(
+        default=None,
+        validation_alias="DATABASE_URL",
+    )
+    database_enabled: bool = Field(
+        default=True,
+        validation_alias="DATABASE_ENABLED",
+    )
+    database_connect_timeout_seconds: int = Field(
+        default=5,
+        ge=1,
+        le=30,
+        validation_alias="DATABASE_CONNECT_TIMEOUT_SECONDS",
+    )
 
     @field_validator("environment")
     @classmethod
@@ -54,6 +68,20 @@ class Settings(BaseSettings):
         if not self.afferens_configured or self.afferens_api_key is None:
             return None
         return self.afferens_api_key.get_secret_value().strip()
+
+    @property
+    def database_configured(self) -> bool:
+        url = self.database_url
+        return bool(url and url.get_secret_value().strip())
+
+    @property
+    def database_available_for_runtime(self) -> bool:
+        return self.database_enabled and self.database_configured
+
+    def database_url_value(self) -> str | None:
+        if not self.database_configured or self.database_url is None:
+            return None
+        return self.database_url.get_secret_value().strip()
 
 
 @lru_cache

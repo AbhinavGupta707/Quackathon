@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from app.config import Settings
+from app.db import get_database_status
 from app.routes.dependencies import get_app_settings
 from app.schemas import (
     HealthResponse,
@@ -20,10 +21,7 @@ async def health(
     afferens_service = _service_status_from_afferens_config(settings)
 
     services = {
-        "database": ServiceStatus(
-            state=ServiceHealthState.DEGRADED,
-            message="Database is not configured in Checkpoint 1.",
-        ),
+        "database": get_database_status(settings),
         "afferens": afferens_service,
     }
 
