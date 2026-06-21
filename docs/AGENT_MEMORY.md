@@ -71,18 +71,39 @@ Optional Checkpoint 4: Live CV Enrichment
 - `.env` exists locally with the user's Afferens key. Treat it as secret.
 - `.env.example` exists.
 - `.gitignore` ignores env files.
-- There was no Git repository at the time this memory was created.
+- Git is initialized and connected to `https://github.com/AbhinavGupta707/Quackathon.git`.
 - `.agents/` could not be created due workspace permissions, so this file and root `AGENTS.md` are the local memory surface.
-- The repository is connected to `https://github.com/AbhinavGupta707/Quackathon.git`.
 - An accidental sub-agent run was stopped. Its unmerged output is quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`; do not integrate it unless the user explicitly asks.
 
-## Active Orchestration
+## Completed Orchestration
 
-Checkpoint 2 orchestration started from `main` using Codex app-managed worktree threads.
+Checkpoint 2 batch 1 ran from `main` using Codex app-managed worktree threads.
 
 | Lane | Thread ID | Link | Worktree | Ownership |
 | --- | --- | --- | --- | --- |
 | C2 Backend Data Memory | `019eeb13-fd88-76e0-a3af-da4ef15258b3` | `codex://threads/019eeb13-fd88-76e0-a3af-da4ef15258b3` | `/Users/abhinavgupta/.codex/worktrees/46a3/Quackathon` | `backend/**` only |
 | C2 Frontend Memory Query | `019eeb14-44e7-7452-9d5d-d5653b359dd6` | `codex://threads/019eeb14-44e7-7452-9d5d-d5653b359dd6` | `/Users/abhinavgupta/.codex/worktrees/8594/Quackathon` | `frontend/**` only |
 
-These sessions are full Codex app worktree sessions, not sub-agents. They were created from existing `main` and are expected to run detached HEAD until branch/commit handling is needed.
+These sessions were full Codex app worktree sessions, not sub-agents. They were created from existing `main`, ran as Codex-managed detached HEAD worktrees, then were committed to scoped branches at handoff.
+
+Merged results on `main`:
+
+- `5350f0b` merged `ws/c2-backend-data-memory`.
+- `0a2f2ea` merged `ws/c2-frontend-memory-query`.
+- Backend now has SQLAlchemy/Alembic-ready durable models, lazy DB status/session setup, raw-event persistence, observation normalization, object memory updates, task/alert creation seams, `/api/perception/sync`, `/api/observations/latest`, `/api/objects/last-seen`, and `/api/tasks`.
+- Frontend now has a dense live memory console with sync feedback, latest observation/evidence display, object memory table, ask UI evidence states, active task console, and honest unavailable states.
+- Integrated checks after merge: backend `python3 -m pytest` passed with 21 tests; frontend `npm run lint` passed; frontend `npm run build` passed.
+
+Remaining Checkpoint 2 gaps:
+
+- `/api/query` is not implemented yet.
+- LangGraph object-recovery workflow is not implemented yet.
+- Fireworks structured reasoning adapter is not implemented yet.
+- Task verification/resolution endpoints are not implemented yet.
+- `/api/alerts` and alert acknowledgement are not implemented yet; alert work may be split between late Checkpoint 2 and Checkpoint 3 depending on product priority.
+
+Next recommended worktree batch:
+
+- Backend Query Workflow lane owning `backend/**`: implement Fireworks adapter, LangGraph object-recovery workflow, `/api/query`, task verification/resolution seams, and query-routing tests.
+- Backend Alert/Task Resolution lane owning `backend/**` only if it can avoid conflicts with the query lane through separate route/service files; otherwise run after query workflow.
+- Frontend Integration Polish lane owning `frontend/**`: wire enabled controls once backend query/task/alert endpoints exist and run browser smoke checks.

@@ -675,24 +675,41 @@ Master:
 
 ### Batch 2: Reach Checkpoint 2
 
-Worktree Session A: Data And Memory
+Status after first Batch 2 execution pass:
+
+- Completed and merged: Data And Memory backend lane.
+- Completed and merged: Dashboard, Ask UI, And Active Tasks frontend lane.
+- Still required: Query, LangGraph workflow, Fireworks reasoning adapter, task verification/resolution, and alert list/ack endpoints.
+
+Completed Worktree Session A: Data And Memory
 
 - Owns backend models, migrations, raw event ledger, observation persistence, object memory service, task tables, verification-check tables.
+- Landed on `main` through `ws/c2-backend-data-memory`.
+- Added `/api/perception/sync`, `/api/observations/latest`, `/api/objects/last-seen`, `/api/tasks`, durable model scaffolding, normalizer, service/repository boundaries, and tests.
 
-Worktree Session B: Normalizer, Query, And Workflows
+Next Worktree Session B: Query And Workflows
 
-- Owns normalizer, object aliasing, query routing, LangGraph object-recovery workflow, Fireworks adapter, query/workflow tests.
-- Coordinates schema changes with Session A.
+- Owns query routing, object aliasing beyond simple normalized labels, LangGraph object-recovery workflow, Fireworks adapter, `/api/query`, task verification/resolution endpoints, and query/workflow tests.
+- Must build on the merged deterministic backend spine and avoid broad rewrites of existing persistence/normalizer code.
+- Should keep live ingestion independent from LangGraph/Fireworks availability.
 
-Worktree Session C: Dashboard, Ask UI, And Active Tasks
+Completed Worktree Session C: Dashboard, Ask UI, And Active Tasks
 
 - Owns dashboard, object memory table, raw event panel, ask interface, active task console.
+- Landed on `main` through `ws/c2-frontend-memory-query`.
+- Added evidence-aware memory console UX and honest unavailable states for not-yet-implemented endpoints.
+
+Next optional Worktree Session D: Alert And Resolution API
+
+- Owns `/api/alerts`, `/api/alerts/{alert_id}/ack`, and any alert-list repository methods if it can run without touching the same files as Query And Workflows.
+- If conflict risk is high, run after Query And Workflows instead of in parallel.
 
 Master:
 
 - Integrates memory sync flow.
 - Runs live Afferens sync if node is available.
 - Resolves schema/API mismatches.
+- Runs backend `python3 -m pytest`, frontend `npm run lint`, and frontend `npm run build` after each merge batch.
 
 ### Batch 3: Reach Checkpoint 3
 
