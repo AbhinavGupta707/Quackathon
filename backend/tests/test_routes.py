@@ -15,6 +15,7 @@ def _client_with_transport(transport: httpx.MockTransport) -> TestClient:
         environment="test",
         afferens_base_url="https://afferens.test",
         afferens_api_key="test-api-key",
+        database_enabled=False,
     )
     app.dependency_overrides[get_app_settings] = lambda: settings
     app.dependency_overrides[get_afferens_adapter] = lambda: AfferensAdapter(
