@@ -4,6 +4,30 @@ This file is master-owned. Backend and frontend workstreams should implement aga
 
 All runtime perception is live-only. Test fixtures may be used in tests, but product endpoints must not serve cached or replayed perception as if it were live.
 
+## Implementation Status
+
+Implemented on the backend:
+
+- `GET /api/health`
+- `GET /api/afferens/status`
+- `GET /api/afferens/latest`
+- `POST /api/perception/sync`
+- `GET /api/observations/latest`
+- `GET /api/objects/last-seen`
+- `GET /api/tasks`
+
+Contracted but not implemented yet:
+
+- `POST /api/query`
+- `GET /api/alerts`
+- `POST /api/tasks/{task_id}/verify`
+- `POST /api/tasks/{task_id}/resolve`
+- `POST /api/alerts/{alert_id}/ack`
+- `POST /api/actuate/alarm`
+- `GET /api/events/stream`
+
+The frontend has UI seams for query and alert flows. Until the backend workflow lane lands, those calls may fail with unavailable or not found responses.
+
 ## Common Types
 
 ### ServiceStatus
@@ -231,6 +255,8 @@ Response:
 
 Answers a user question using current perception first, then durable memory.
 
+Backend status: not implemented yet. This is the target contract for the LangGraph and Fireworks workflow lane.
+
 Request:
 
 ```json
@@ -259,9 +285,30 @@ Response:
 }
 ```
 
+### GET /api/alerts
+
+Returns active and recent caregiver-facing alerts.
+
+Backend status: not implemented yet. Alert records exist in the data model, but the API route and acknowledgement flow are pending.
+
+Query parameters:
+
+- `status`: optional status filter.
+- `severity`: optional severity filter.
+
+Response:
+
+```json
+{
+  "alerts": []
+}
+```
+
 ### POST /api/tasks/{task_id}/verify
 
 Attempts a live Afferens verification check for a task.
+
+Backend status: not implemented yet.
 
 Request:
 
@@ -290,6 +337,8 @@ Response:
 
 Allows explicit human resolution when live verification is not possible.
 
+Backend status: not implemented yet.
+
 Request:
 
 ```json
@@ -308,25 +357,11 @@ Response:
 }
 ```
 
-### GET /api/alerts
-
-Returns alerts.
-
-Query parameters:
-
-- `status`: optional status filter.
-
-Response:
-
-```json
-{
-  "alerts": []
-}
-```
-
 ### POST /api/alerts/{alert_id}/ack
 
 Acknowledges an alert.
+
+Backend status: not implemented yet.
 
 Request:
 
@@ -349,6 +384,8 @@ Response:
 ### POST /api/actuate/alarm
 
 Attempts a browser/dashboard alarm and optionally an Afferens actuation command.
+
+Backend status: not implemented yet.
 
 Request:
 
@@ -379,6 +416,8 @@ Response:
 
 SSE stream for frontend live updates.
 
+Backend status: not implemented yet.
+
 Event types:
 
 - `afferens_status`
@@ -388,4 +427,3 @@ Event types:
 - `alert_updated`
 - `actuation_attempted`
 - `verification_completed`
-

@@ -4,6 +4,26 @@ Afferens Memory Guardian is designed as a live physical-world assistance system,
 
 The core requirement is that runtime product state comes from live Afferens perception. The system may remember, reason over, and cite prior observations, but it must not present cached, replayed, or fixture data as current physical perception.
 
+## Current Implementation Status
+
+Implemented:
+
+- FastAPI health and Afferens status/latest routes.
+- Live perception sync from Afferens into a raw event ledger.
+- Observation normalization and object last-seen memory.
+- Task and alert record models plus task listing.
+- Postgres + pgvector local service.
+- Next.js memory console for status, sync, latest evidence, object memory, ask shell, and active tasks.
+
+Pending:
+
+- Backend `/api/query`.
+- Backend `/api/alerts`.
+- LangGraph object-recovery and verified-resolution workflow.
+- Fireworks structured reasoning adapter.
+- Task verification/resolution endpoints.
+- Alert acknowledgement endpoints.
+
 ## Product Loop
 
 ```text
@@ -55,9 +75,9 @@ Checkpoint 2+ backend boundaries:
 - Raw event persistence.
 - Observation normalization.
 - Object memory updates.
-- Query routing and answer synthesis.
-- LangGraph task workflows.
-- Fireworks structured-output calls.
+- Query routing and answer synthesis. Pending backend workflow work.
+- LangGraph task workflows. Pending backend workflow work.
+- Fireworks structured-output calls. Pending backend workflow work.
 - Safety rules, actuation logging, and verification checks.
 - SSE/WebSocket or polling-friendly event stream.
 
