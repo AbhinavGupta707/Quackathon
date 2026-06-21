@@ -108,6 +108,26 @@ export type TasksResponse = {
   tasks: Task[];
 };
 
+export type TaskVerificationState = "verified" | "not_verified" | "inconclusive";
+
+export type TaskVerification = {
+  id: string;
+  state: TaskVerificationState;
+  observation_id?: string | null;
+  message: string;
+};
+
+export type TaskVerifyResponse = {
+  ok: boolean;
+  task: Task;
+  verification: TaskVerification;
+};
+
+export type TaskResolveResponse = {
+  ok: boolean;
+  task: Task;
+};
+
 export type Alert = {
   id: string;
   task_id?: string | null;
@@ -124,6 +144,11 @@ export type Alert = {
 
 export type AlertsResponse = {
   alerts: Alert[];
+};
+
+export type AlertAckResponse = {
+  ok: boolean;
+  alert: Alert;
 };
 
 export type SyncResponse = {

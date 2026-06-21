@@ -1,12 +1,15 @@
 import type {
   AfferensLatestResponse,
   AfferensStatus,
+  AlertAckResponse,
   AlertsResponse,
   HealthResponse,
   LatestObservationResponse,
   ObjectsResponse,
   QueryResponse,
   SyncResponse,
+  TaskResolveResponse,
+  TaskVerifyResponse,
   TasksResponse
 } from "./types";
 
@@ -101,8 +104,37 @@ export function getTasks(): Promise<TasksResponse> {
   return requestJson<TasksResponse>("/api/tasks");
 }
 
+export function verifyTask(taskId: string): Promise<TaskVerifyResponse> {
+  return requestJson<TaskVerifyResponse>(`/api/tasks/${encodeURIComponent(taskId)}/verify`, {
+    method: "POST",
+    bodyJson: {
+      room_id: "default_home_zone"
+    }
+  });
+}
+
+export function resolveTask(taskId: string, resolutionNote: string): Promise<TaskResolveResponse> {
+  return requestJson<TaskResolveResponse>(`/api/tasks/${encodeURIComponent(taskId)}/resolve`, {
+    method: "POST",
+    bodyJson: {
+      resolved_by: "user",
+      resolution_note: resolutionNote
+    }
+  });
+}
+
 export function getAlerts(): Promise<AlertsResponse> {
   return requestJson<AlertsResponse>("/api/alerts");
+}
+
+export function acknowledgeAlert(alertId: string, note?: string): Promise<AlertAckResponse> {
+  return requestJson<AlertAckResponse>(`/api/alerts/${encodeURIComponent(alertId)}/ack`, {
+    method: "POST",
+    bodyJson: {
+      acknowledged_by: "caregiver",
+      note: note?.trim() || "Acknowledged in dashboard."
+    }
+  });
 }
 
 export function askQuery(query: string, sessionId: string): Promise<QueryResponse> {
