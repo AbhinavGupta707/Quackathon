@@ -675,11 +675,13 @@ Master:
 
 ### Batch 2: Reach Checkpoint 2
 
-Status after first Batch 2 execution pass:
+Status after second Batch 2 execution pass:
 
 - Completed and merged: Data And Memory backend lane.
 - Completed and merged: Dashboard, Ask UI, And Active Tasks frontend lane.
-- Still required: Query, LangGraph workflow, Fireworks reasoning adapter, task verification/resolution, and alert list/ack endpoints.
+- Completed and merged: Backend Query Workflow lane with `/api/query`, Fireworks adapter, LangGraph object-recovery workflow wrapper, task verification/resolution, alert list/ack endpoints, and Alembic migration.
+- Completed and merged: Runtime docs/devex lane, then master reconciliation after backend query workflow landed.
+- Still required: frontend action controls for task verify/resolve and alert acknowledgement, then integrated live smoke testing.
 
 Completed Worktree Session A: Data And Memory
 
@@ -687,11 +689,11 @@ Completed Worktree Session A: Data And Memory
 - Landed on `main` through `ws/c2-backend-data-memory`.
 - Added `/api/perception/sync`, `/api/observations/latest`, `/api/objects/last-seen`, `/api/tasks`, durable model scaffolding, normalizer, service/repository boundaries, and tests.
 
-Next Worktree Session B: Query And Workflows
+Completed Worktree Session B: Query And Workflows
 
 - Owns query routing, object aliasing beyond simple normalized labels, LangGraph object-recovery workflow, Fireworks adapter, `/api/query`, task verification/resolution endpoints, and query/workflow tests.
-- Must build on the merged deterministic backend spine and avoid broad rewrites of existing persistence/normalizer code.
-- Should keep live ingestion independent from LangGraph/Fireworks availability.
+- Landed on `main` through `ws/c2-backend-query-workflow`.
+- Added deterministic object search, Fireworks structured adapter, LangGraph workflow wrapper with fallback, evidence-backed query answers, live Afferens task verification, human resolution, alert list/ack routes, repository/service methods, focused tests, and durable schema migration.
 
 Completed Worktree Session C: Dashboard, Ask UI, And Active Tasks
 
@@ -699,15 +701,18 @@ Completed Worktree Session C: Dashboard, Ask UI, And Active Tasks
 - Landed on `main` through `ws/c2-frontend-memory-query`.
 - Added evidence-aware memory console UX and honest unavailable states for not-yet-implemented endpoints.
 
-Next optional Worktree Session D: Alert And Resolution API
+Next Worktree Session D: Frontend Resolution Integration
 
-- Owns `/api/alerts`, `/api/alerts/{alert_id}/ack`, and any alert-list repository methods if it can run without touching the same files as Query And Workflows.
-- If conflict risk is high, run after Query And Workflows instead of in parallel.
+- Owns `frontend/**` only.
+- Wire task verify, task resolve, and alert acknowledge controls to the implemented backend endpoints.
+- Refresh tasks/alerts after each action and keep honest loading/error states.
+- Run `npm run lint`, `npm run typecheck`, and `npm run build`.
 
 Master:
 
 - Integrates memory sync flow.
-- Runs live Afferens sync if node is available.
+- Runs full integrated checks.
+- Runs live Afferens sync/query/verify/ack smoke test once local keys and node are available.
 - Resolves schema/API mismatches.
 - Runs backend `python3 -m pytest`, frontend `npm run lint`, and frontend `npm run build` after each merge batch.
 

@@ -11,18 +11,20 @@ Implemented:
 - FastAPI health and Afferens status/latest routes.
 - Live perception sync from Afferens into a raw event ledger.
 - Observation normalization and object last-seen memory.
-- Task and alert record models plus task listing.
+- Object-location query endpoint with evidence-backed current/memory answers.
+- Fireworks structured reasoning adapter for routing, evidence sufficiency, and answer synthesis.
+- LangGraph object-recovery workflow wrapper with deterministic fallback.
+- Task listing, live verification, human resolution, alert listing, and alert acknowledgement.
+- Task and alert durable models plus Alembic migration.
 - Postgres + pgvector local service.
 - Next.js memory console for status, sync, latest evidence, object memory, ask shell, and active tasks.
 
 Pending:
 
-- Backend `/api/query`.
-- Backend `/api/alerts`.
-- LangGraph object-recovery and verified-resolution workflow.
-- Fireworks structured reasoning adapter.
-- Task verification/resolution endpoints.
-- Alert acknowledgement endpoints.
+- Frontend task verify/resolve and alert acknowledgement controls.
+- Alarm actuation endpoint.
+- Streaming event updates.
+- Full manual live Afferens plus Fireworks smoke test.
 
 ## Product Loop
 
@@ -75,9 +77,9 @@ Checkpoint 2+ backend boundaries:
 - Raw event persistence.
 - Observation normalization.
 - Object memory updates.
-- Query routing and answer synthesis. Pending backend workflow work.
-- LangGraph task workflows. Pending backend workflow work.
-- Fireworks structured-output calls. Pending backend workflow work.
+- Query routing and answer synthesis.
+- LangGraph object-recovery workflow.
+- Fireworks structured-output calls.
 - Safety rules, actuation logging, and verification checks.
 - SSE/WebSocket or polling-friendly event stream.
 

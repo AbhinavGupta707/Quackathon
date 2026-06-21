@@ -94,16 +94,22 @@ Merged results on `main`:
 - Frontend now has a dense live memory console with sync feedback, latest observation/evidence display, object memory table, ask UI evidence states, active task console, and honest unavailable states.
 - Integrated checks after merge: backend `python3 -m pytest` passed with 21 tests; frontend `npm run lint` passed; frontend `npm run build` passed.
 
+Checkpoint 2 batch 2 backend/docs pass:
+
+- Merged backend query workflow through `ws/c2-backend-query-workflow`.
+- Backend now has `/api/query`, Fireworks structured reasoning adapter, LangGraph object-recovery workflow wrapper with deterministic fallback, `/api/tasks/{task_id}/verify`, `/api/tasks/{task_id}/resolve`, `/api/alerts`, `/api/alerts/{alert_id}/ack`, and a real Alembic durable schema migration.
+- Query answers must remain evidence-backed: current live observation first, durable memory second, no invented locations.
+- Task verification must fetch fresh live Afferens data and sync through the normalizer before deciding verified/not_verified/inconclusive.
+- Merged runtime docs through `ws/c2-devex-runtime-docs`, then reconciled docs with the implemented backend endpoints.
+
 Remaining Checkpoint 2 gaps:
 
-- `/api/query` is not implemented yet.
-- LangGraph object-recovery workflow is not implemented yet.
-- Fireworks structured reasoning adapter is not implemented yet.
-- Task verification/resolution endpoints are not implemented yet.
-- `/api/alerts` and alert acknowledgement are not implemented yet; alert work may be split between late Checkpoint 2 and Checkpoint 3 depending on product priority.
+- Frontend task verify/resolve controls are still disabled.
+- Frontend alert acknowledgement control is still disabled.
+- Full local live Afferens plus Fireworks smoke test has not been run.
 
 Next recommended worktree batch:
 
-- Backend Query Workflow lane owning `backend/**`: implement Fireworks adapter, LangGraph object-recovery workflow, `/api/query`, task verification/resolution seams, and query-routing tests.
-- Backend Alert/Task Resolution lane owning `backend/**` only if it can avoid conflicts with the query lane through separate route/service files; otherwise run after query workflow.
-- Frontend Integration Polish lane owning `frontend/**`: wire enabled controls once backend query/task/alert endpoints exist and run browser smoke checks.
+- Frontend Resolution Integration lane owning `frontend/**`: wire enabled controls for task verify, human resolve, and alert acknowledge against the implemented backend endpoints; refresh task/alert state after each action; run lint/typecheck/build.
+- Integrated main checks after merge: backend tests, backend compile, frontend lint, frontend typecheck/build.
+- Manual checkpoint after that: run local DB migration, start backend/frontend, connect live Afferens node, sync/query/verify/ack with real API keys.

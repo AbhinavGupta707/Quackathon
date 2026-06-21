@@ -2,7 +2,7 @@
 
 Afferens Memory Guardian is a live physical-perception product for the Quackathon Hardware / Physical Perception track.
 
-It uses a live Afferens Vision Node to perceive a real scene, persist evidence-backed object memories, show a memory console, and prepare for object-location questions and verified resolution workflows.
+It uses a live Afferens Vision Node to perceive a real scene, persist evidence-backed object memories, answer object-location questions, show a memory console, and verify recovery tasks from later live observations or explicit human resolution.
 
 This is an assistive prototype. It is not a medical device, diagnostic system, emergency-response service, certified fall detector, or substitute for human supervision.
 
@@ -11,19 +11,20 @@ This is an assistive prototype. It is not a medical device, diagnostic system, e
 Implemented on `main`:
 
 - FastAPI backend with `/api/health`, `/api/afferens/status`, `/api/afferens/latest`, `/api/perception/sync`, `/api/observations/latest`, `/api/objects/last-seen`, and `/api/tasks`.
+- Backend object-recovery workflow with `/api/query`, `/api/tasks/{task_id}/verify`, `/api/tasks/{task_id}/resolve`, `/api/alerts`, and `/api/alerts/{alert_id}/ack`.
 - Durable data spine models for raw Afferens events, normalized observations, detected objects, last-seen memory, queries, tasks, alerts, actuation attempts, verification checks, and status events.
+- Alembic migration for the durable memory schema.
+- Fireworks structured reasoning adapter and LangGraph object-recovery workflow wrapper, both with graceful fallback when unavailable.
 - Postgres + pgvector local Compose service.
-- Next.js memory console with live status, sync action, latest observation/evidence display, object memory table, ask UI states, and active task console.
+- Next.js memory console with live status, sync action, latest observation/evidence display, object memory table, query UI, alert queue, and active task console.
 
 Still pending:
 
-- Backend `/api/query`.
-- Backend `/api/alerts`.
-- LangGraph object-recovery and verified-resolution workflow.
-- Fireworks structured reasoning adapter.
-- Task verification/resolution and alert acknowledgement endpoints.
+- Frontend buttons for task verify/resolve and alert acknowledgement.
+- Alarm actuation and streaming updates.
+- Full manual live Afferens plus Fireworks smoke test.
 
-The frontend already has UI seams for query and alert flows, but those backend endpoints are expected to return unavailable until the next backend workflow lane lands.
+The frontend can ask object-location questions and list alerts. Some action buttons remain disabled until the next frontend integration lane wires them to the backend action endpoints.
 
 ## Live-Only Rule
 
@@ -177,9 +178,9 @@ Documented variables are in [.env.example](.env.example).
 | `DATABASE_URL` | Backend secret-ish local config | Required for durable memory. Use the local Compose URL for development. |
 | `DATABASE_ENABLED` | Backend | Set `true` for the current product flow. |
 | `DATABASE_CONNECT_TIMEOUT_SECONDS` | Backend | Database health/session connection timeout. |
-| `FIREWORKS_API_KEY` | Backend secret | Needed once reasoning workflow lands. |
+| `FIREWORKS_API_KEY` | Backend secret | Enables structured query routing and answer synthesis; deterministic fallback is used when absent. |
 | `FIREWORKS_BASE_URL` | Backend | Fireworks OpenAI-compatible endpoint. |
-| `FIREWORKS_MODEL` | Backend | Model ID selected by the workflow lane. |
+| `FIREWORKS_MODEL` | Backend | Fireworks model ID for structured reasoning. |
 | `LANGSMITH_TRACING` | Backend optional | Optional tracing for LangGraph development. |
 | `LANGSMITH_API_KEY` | Backend optional secret | Only needed when tracing is enabled. |
 | `LANGSMITH_PROJECT` | Backend optional | Local trace project name. |

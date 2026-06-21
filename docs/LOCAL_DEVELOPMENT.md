@@ -15,7 +15,15 @@ Current backend:
 - `/api/observations/latest`
 - `/api/objects/last-seen`
 - `/api/tasks`
+- `/api/query`
+- `/api/alerts`
+- `/api/tasks/{task_id}/verify`
+- `/api/tasks/{task_id}/resolve`
+- `/api/alerts/{alert_id}/ack`
 - SQLAlchemy models for the raw event ledger, observations, object memory, queries, tasks, alerts, actuation attempts, verification checks, and status events.
+- Alembic durable schema migration.
+- Fireworks structured reasoning adapter with deterministic fallback.
+- LangGraph object-recovery workflow wrapper with deterministic fallback.
 
 Current frontend:
 
@@ -23,17 +31,16 @@ Current frontend:
 - Manual live perception sync.
 - Latest observation and evidence display.
 - Object memory table.
-- Ask UI shell.
+- Ask UI backed by `/api/query`.
+- Alert queue backed by `/api/alerts`.
 - Active task console.
 
-Pending backend work:
+Pending product work:
 
-- `/api/query`
-- `/api/alerts`
-- LangGraph workflow states.
-- Fireworks reasoning adapter.
-- Task verification/resolution endpoints.
-- Alert acknowledgement endpoints.
+- Frontend task verify/resolve and alert acknowledgement controls.
+- Alarm actuation endpoint.
+- Streaming event updates.
+- Full manual live Afferens plus Fireworks smoke test.
 
 ## Rules Of The Road
 
@@ -68,7 +75,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/afferens_memory_guard
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-Recommended for upcoming Checkpoint 2 workflow work:
+Recommended for Checkpoint 2 query workflow work:
 
 ```text
 FIREWORKS_API_KEY=...
@@ -144,6 +151,7 @@ curl http://localhost:8000/api/afferens/latest
 curl http://localhost:8000/api/observations/latest
 curl http://localhost:8000/api/objects/last-seen
 curl http://localhost:8000/api/tasks
+curl http://localhost:8000/api/alerts
 ```
 
 Manual sync, after a live Afferens Node is active:
@@ -155,6 +163,34 @@ curl -X POST http://localhost:8000/api/perception/sync \
 ```
 
 Do not use mocked Afferens responses through product endpoints. Tests may mock provider responses.
+
+Evidence-backed query:
+
+```bash
+curl -X POST http://localhost:8000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"query":"Where are my keys?","session_id":"local-smoke"}'
+```
+
+Task verification and resolution:
+
+```bash
+curl -X POST http://localhost:8000/api/tasks/<task_id>/verify \
+  -H "Content-Type: application/json" \
+  -d '{"room_id":"default_home_zone"}'
+
+curl -X POST http://localhost:8000/api/tasks/<task_id>/resolve \
+  -H "Content-Type: application/json" \
+  -d '{"resolved_by":"user","resolution_note":"I found it."}'
+```
+
+Alert acknowledgement:
+
+```bash
+curl -X POST http://localhost:8000/api/alerts/<alert_id>/ack \
+  -H "Content-Type: application/json" \
+  -d '{"acknowledged_by":"caregiver","note":"Checking now."}'
+```
 
 ## Frontend
 
@@ -217,7 +253,8 @@ Use this checklist after keys are available and the live node is ready:
 8. Start a live Afferens Vision node.
 9. Sync perception from the memory console.
 10. Confirm latest observation and object memory populate from live evidence.
-11. Once `/api/query` lands, ask one object-location question and confirm the answer cites observation evidence.
+11. Ask one object-location question and confirm the answer cites observation evidence.
+12. If a recovery task opens, put the object back in view and call task verification.
 
 ## Troubleshooting Order
 

@@ -15,18 +15,18 @@ Implemented on the backend:
 - `GET /api/observations/latest`
 - `GET /api/objects/last-seen`
 - `GET /api/tasks`
-
-Contracted but not implemented yet:
-
 - `POST /api/query`
 - `GET /api/alerts`
 - `POST /api/tasks/{task_id}/verify`
 - `POST /api/tasks/{task_id}/resolve`
 - `POST /api/alerts/{alert_id}/ack`
+
+Contracted but not implemented yet:
+
 - `POST /api/actuate/alarm`
 - `GET /api/events/stream`
 
-The frontend has UI seams for query and alert flows. Until the backend workflow lane lands, those calls may fail with unavailable or not found responses.
+The frontend can call query and alert list endpoints. Frontend action controls for task verification/resolution and alert acknowledgement are still being wired.
 
 ## Common Types
 
@@ -174,6 +174,16 @@ Returns backend health and provider configuration state without secrets.
       "state": "degraded",
       "message": "No live events yet",
       "checked_at": "2026-06-21T16:00:00Z"
+    },
+    "fireworks": {
+      "state": "degraded",
+      "message": "Fireworks API key is not configured; deterministic fallback is available.",
+      "checked_at": "2026-06-21T16:00:00Z"
+    },
+    "langgraph": {
+      "state": "ok",
+      "message": "LangGraph is available for object-recovery workflow planning.",
+      "checked_at": "2026-06-21T16:00:00Z"
     }
   }
 }
@@ -255,7 +265,7 @@ Response:
 
 Answers a user question using current perception first, then durable memory.
 
-Backend status: not implemented yet. This is the target contract for the LangGraph and Fireworks workflow lane.
+Implemented. Fireworks may assist with structured routing/evidence assessment/answer synthesis when configured; deterministic evidence-backed fallback is used when Fireworks or LangGraph is unavailable.
 
 Request:
 
@@ -289,12 +299,9 @@ Response:
 
 Returns active and recent caregiver-facing alerts.
 
-Backend status: not implemented yet. Alert records exist in the data model, but the API route and acknowledgement flow are pending.
-
 Query parameters:
 
 - `status`: optional status filter.
-- `severity`: optional severity filter.
 
 Response:
 
@@ -308,7 +315,7 @@ Response:
 
 Attempts a live Afferens verification check for a task.
 
-Backend status: not implemented yet.
+Implemented. This endpoint fetches a fresh live Afferens event and runs the existing sync/normalization flow before returning `verified`, `not_verified`, or `inconclusive`.
 
 Request:
 
@@ -337,7 +344,7 @@ Response:
 
 Allows explicit human resolution when live verification is not possible.
 
-Backend status: not implemented yet.
+Implemented. This records a human-reported resolution audit state.
 
 Request:
 
@@ -361,7 +368,7 @@ Response:
 
 Acknowledges an alert.
 
-Backend status: not implemented yet.
+Implemented. If the alert is linked to a task, the backend also records a task event.
 
 Request:
 
