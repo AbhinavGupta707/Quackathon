@@ -56,7 +56,7 @@ The Checkpoint 1 work already completed through real Codex app worktree threads.
 | Frontend shell | `019eeaf2-0014-7202-bbc1-1031302204de` | `codex://threads/019eeaf2-0014-7202-bbc1-1031302204de` | `/Users/abhinavgupta/.codex/worktrees/4a36/Quackathon` |
 | Docs DevEx | `019eeaf2-37a1-7a82-808a-8e0444861ad3` | `codex://threads/019eeaf2-37a1-7a82-808a-8e0444861ad3` | `/Users/abhinavgupta/.codex/worktrees/c36c/Quackathon` |
 
-These threads were renamed with a `Quackathon C1` prefix and pinned after the visibility diagnosis so the user can find them more easily in the app.
+These threads were renamed with a `Quackathon C1` prefix and pinned after the visibility diagnosis so the user can find them more easily in the app. Pinning was a visibility aid, not proof that they were real threads.
 
 ## Correct Future Spawn Protocol
 
@@ -69,10 +69,10 @@ For future batches:
 5. Treat detached HEAD as normal for native Codex-managed worktrees.
 6. Put the logical lane in the title and prompt, for example `Quackathon C2 Data Memory`.
 7. Immediately call `set_thread_title`.
-8. Immediately call `set_thread_pinned` while the workstream is active.
-9. Confirm the thread with `list_threads` and record its ID, title, status, and cwd.
-10. Confirm Git worktree registration with `git worktree list --porcelain`.
-11. Report the `codex://threads/<thread-id>` link to the user.
+8. Confirm the thread with `list_threads` and record its ID, title, status, and cwd.
+9. Confirm Git worktree registration with `git worktree list --porcelain`.
+10. Report the `codex://threads/<thread-id>` link to the user.
+11. Do not rely on pinning for visibility. Pin only when the user wants it or when an important long-running worktree needs cleanup protection.
 12. Monitor the visible thread with `read_thread` or by opening the app thread.
 13. Create a Git branch only when the work needs to be committed or pushed from the worktree.
 14. Use Handoff if the work should be brought back into the foreground checkout.
@@ -82,11 +82,11 @@ For future batches:
 Every spawned worktree session must have:
 
 - A clear `Quackathon C<checkpoint> <lane>` thread title.
-- A pinned thread while active.
 - A recorded thread ID.
 - A recorded worktree cwd.
 - A `codex://threads/<thread-id>` link shared with the user.
 - A status row in the orchestrator notes or final checkpoint report.
+- Optional pinning only when the user wants pinned visibility or when cleanup protection matters.
 
 If a session is not visible in the sidebar:
 
@@ -96,3 +96,25 @@ If a session is not visible in the sidebar:
 4. Use `git worktree list --porcelain` to verify whether a worktree exists.
 5. If there is a failed pending card but no thread ID, assume setup failed and create a fresh correctly configured worktree thread.
 
+## Visibility Test On 2026-06-21
+
+A deliberately read-only test worktree was launched after correcting the protocol.
+
+| Field | Value |
+| --- | --- |
+| Thread title | `Quackathon Worktree Visibility Test` |
+| Thread ID | `019eeb09-28f2-7e42-8ddb-1a5777ab0701` |
+| Deep link | `codex://threads/019eeb09-28f2-7e42-8ddb-1a5777ab0701` |
+| Worktree | `/Users/abhinavgupta/.codex/worktrees/2bdc/Quackathon` |
+| Starting ref | `main` |
+| Pin state | intentionally not pinned for natural project visibility testing |
+| Result | thread registered successfully, ran, reported, and stopped idle |
+| Git state reported by thread | detached HEAD, `git status --short --branch` showed `## HEAD (no branch)` |
+
+Outcome:
+
+- Project-scoped worktree creation from existing `main` works.
+- `create_thread` first returned a `pendingWorktreeId`, then the thread appeared in `list_threads` with a real thread ID and worktree cwd.
+- Detached HEAD is confirmed as the normal Codex-managed worktree state.
+- No files were edited, no commits were created, no `.env` was read, and no network calls were run.
+- This test should remain unpinned until the user confirms whether it appears naturally under the Quackathon project section in the Codex app UI.

@@ -524,7 +524,7 @@ The current session acts as master orchestrator. It should work in loops:
 2. Decide the next checkpoint target.
 3. Identify independent workstreams that can run safely in parallel.
 4. Create only substantial Codex worktree sessions.
-5. Give each session a clear title, pin it while active, and record its thread ID, `codex://threads/<thread-id>` link, worktree path, logical lane, ownership, and status.
+5. Give each session a clear title and record its thread ID, `codex://threads/<thread-id>` link, worktree path, logical lane, ownership, and status.
 6. Assign each session explicit file ownership.
 7. Monitor progress every few minutes through app thread tools and user-visible thread links.
 8. Review each completed session's diff, tests, and notes.
@@ -552,8 +552,9 @@ The master session should:
 9. If the work should stay in the worktree and be pushed, create a branch at commit time using the Codex app's Create branch here flow or a unique explicit branch inside that worktree.
 10. If the work should move into the foreground checkout, use Handoff instead of checking out the same branch in multiple worktrees.
 11. After thread creation, verify the thread appears in `list_threads` and the worktree appears in `git worktree list --porcelain`.
-12. Immediately set a concise title, pin the active thread, and share/record a `codex://threads/<thread-id>` link.
-13. Keep a local table of thread IDs, titles, worktree paths, logical lanes, ownership, and status.
+12. Immediately set a concise title and share/record a `codex://threads/<thread-id>` link.
+13. Do not rely on pinning for visibility. Pin only when the user wants it or when a long-running important worktree needs cleanup protection.
+14. Keep a local table of thread IDs, titles, worktree paths, logical lanes, ownership, and status.
 
 Failure mode to avoid:
 
@@ -583,7 +584,7 @@ Visibility protocol:
 
 - After `create_thread`, call `list_threads` and confirm the returned thread ID, title, status, and `cwd`.
 - Use `set_thread_title` to make the lane obvious in the sidebar and thread search.
-- Use `set_thread_pinned` for active workstream threads so Codex-managed worktrees are not automatically cleaned up while important.
+- Use `set_thread_pinned` only when the user wants pinned visibility or when an important long-running worktree needs cleanup protection.
 - Report the deep link `codex://threads/<thread-id>` to the user for each active spawned session.
 - Tell the user to use thread search (`Cmd+G` on macOS) for the title, branch/lane label, or thread ID if a worktree thread is not visible in the current project list.
 - If only a failed pending worktree card exists and no thread ID is returned by `list_threads`, do not assume there is hidden work. Fix the starting ref or setup error and create a fresh visible thread.

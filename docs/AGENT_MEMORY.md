@@ -37,7 +37,8 @@ The master session:
 - Keeps lane names as logical ownership labels in the thread title and prompt until a branch is needed for commit/push/PR.
 - Creates a real branch only at commit/handoff time, either with the Codex app's Create branch here flow or an explicit unique branch inside that worktree.
 - Checks app registration with `list_threads` and Git registration with `git worktree list --porcelain` after creation.
-- Immediately sets a clear title, pins active worktree threads, records thread IDs, and shares `codex://threads/<thread-id>` links so the user can monitor sessions in the Codex app.
+- Immediately sets a clear title, records thread IDs, and shares `codex://threads/<thread-id>` links so the user can monitor sessions in the Codex app.
+- Does not rely on pinning for visibility. Pin only when the user wants it or when a long-running important worktree needs cleanup protection.
 - Assigns non-overlapping file ownership.
 - Monitors progress.
 - Reviews diffs and tests.

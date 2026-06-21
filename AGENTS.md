@@ -77,7 +77,8 @@ When parallelizing:
 - Keep lane names as logical ownership labels in the thread title/prompt until a branch is actually needed for commit/push/PR.
 - Create a real Git branch only at commit/handoff time, either with the Codex app's Create branch here flow or an explicit unique branch inside that worktree.
 - After creation, verify app registration with `list_threads` and Git registration with `git worktree list --porcelain`.
-- Immediately set a clear thread title, pin active worktree threads, and share/record the `codex://threads/<thread-id>` link so the user can open each session in the Codex app.
+- Immediately set a clear thread title and share/record the `codex://threads/<thread-id>` link so the user can open each session in the Codex app.
+- Do not rely on pinning for thread visibility. Pin only when the user wants it or when a long-running important worktree needs cleanup protection.
 - Assign non-overlapping files.
 - Avoid concurrent edits to shared schemas, migrations, root config, or Docker Compose unless coordinated.
 - Require each session to report files changed, commands run, tests run, risks, and integration notes.
