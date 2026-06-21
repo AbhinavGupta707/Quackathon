@@ -48,7 +48,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -99,7 +100,8 @@ p {
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid rgba(17, 105, 95, 0.38);
   outline-offset: 3px;
 }
@@ -583,12 +585,14 @@ td span {
   box-shadow: none;
 }
 
-.ask-form {
+.ask-form,
+.resolution-form {
   display: grid;
   gap: var(--space-2);
 }
 
-.ask-form label {
+.ask-form label,
+.resolution-form label {
   font-weight: 800;
 }
 
@@ -598,7 +602,8 @@ td span {
   gap: var(--space-2);
 }
 
-.ask-form input {
+.ask-form input,
+.resolution-form textarea {
   min-height: 2.75rem;
   min-width: 0;
   border: 1px solid var(--color-border-strong);
@@ -606,6 +611,17 @@ td span {
   background: #ffffff;
   color: var(--color-text);
   padding: 0.7rem 0.85rem;
+}
+
+.resolution-form {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #f8fafc;
+  padding: var(--space-3);
+}
+
+.resolution-form textarea {
+  resize: vertical;
 }
 
 .answer {

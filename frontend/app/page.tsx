@@ -9,13 +9,16 @@ import { NodeSetupChecklist } from "@/components/NodeSetupChecklist";
 import { ObjectMemoryTable } from "@/components/ObjectMemoryTable";
 import { ObservationPanel } from "@/components/ObservationPanel";
 import {
+  acknowledgeAlert,
   getAfferensStatus,
   getAlerts,
   getHealth,
   getLatestObservation,
   getObjects,
   getTasks,
-  syncPerception
+  resolveTask,
+  syncPerception,
+  verifyTask
 } from "@/lib/api";
 import type {
   AfferensStatus,
@@ -129,12 +132,31 @@ export default function Home() {
             syncResult={syncResult}
           />
           <ObjectMemoryTable objects={objects} />
-          <ActiveTaskConsole tasks={tasks} />
+          <ActiveTaskConsole
+            tasks={tasks}
+            onResolve={async (taskId, resolutionNote) => {
+              const result = await resolveTask(taskId, resolutionNote);
+              await refreshAll();
+              return result;
+            }}
+            onVerify={async (taskId) => {
+              const result = await verifyTask(taskId);
+              await refreshAll();
+              return result;
+            }}
+          />
         </div>
 
         <aside className="dashboard-grid__side" aria-label="Setup and caregiver controls">
           <NodeSetupChecklist health={health} afferens={afferens} />
-          <AlertQueue alerts={alerts} />
+          <AlertQueue
+            alerts={alerts}
+            onAcknowledge={async (alertId) => {
+              const result = await acknowledgeAlert(alertId);
+              await refreshAll();
+              return result;
+            }}
+          />
           <AskInterface sessionId={sessionId} onAnswered={() => void refreshAll()} />
         </aside>
       </div>
