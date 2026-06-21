@@ -27,6 +27,9 @@ class AfferensAdapter:
         self._transport = transport
 
     async def fetch_latest(self) -> AfferensFetchResult:
+        return await self.fetch_events(limit=1)
+
+    async def fetch_events(self, *, limit: int = 1) -> AfferensFetchResult:
         key = self._settings.afferens_key_value()
         if key is None:
             return AfferensFetchResult(
@@ -45,7 +48,7 @@ class AfferensAdapter:
                 response = await client.get(
                     "/api/perception",
                     headers={"X-API-KEY": key},
-                    params={"modality": "vision", "limit": 1},
+                    params={"modality": "vision", "limit": min(max(limit, 1), 10)},
                 )
         except httpx.HTTPError as exc:
             return AfferensFetchResult(
@@ -94,8 +97,8 @@ class AfferensAdapter:
                 )
             )
 
-        event = self._extract_latest_event(payload)
-        if event is None:
+        events = self._extract_events(payload)
+        if not events:
             return AfferensFetchResult(
                 status=self._status(
                     state=AfferensConnectionState.NO_LIVE_EVENTS,
@@ -105,8 +108,9 @@ class AfferensAdapter:
             )
 
         return AfferensFetchResult(
-            status=self._status_from_event(event),
-            raw_event=event,
+            status=self._status_from_event(events[0]),
+            raw_event=events[0],
+            raw_events=events,
             raw_payload=payload,
         )
 
@@ -136,7 +140,7 @@ class AfferensAdapter:
         return self._status(
             state=AfferensConnectionState.LIVE,
             message="Live Afferens Vision event available.",
-            latest_event_id=self._first_text(event, "id", "event_id", "eventId"),
+            latest_event_id=self._first_text(event, "entity_id", "id", "event_id", "eventId"),
             latest_timestamp_utc=self._first_datetime(
                 event,
                 "timestamp_utc",
@@ -158,28 +162,32 @@ class AfferensAdapter:
         )
 
     def _extract_latest_event(self, payload: Any) -> dict[str, Any] | None:
+        events = self._extract_events(payload)
+        return events[0] if events else None
+
+    def _extract_events(self, payload: Any) -> list[dict[str, Any]]:
         if isinstance(payload, list):
-            return self._first_mapping(payload)
+            return self._mappings(payload)
 
         if not isinstance(payload, dict):
-            return None
+            return []
 
         for key in ("event", "latest_event", "latestEvent", "raw_event", "rawEvent"):
             candidate = payload.get(key)
             if isinstance(candidate, dict):
-                return candidate
+                return [candidate]
 
         for key in ("events", "data", "items", "results", "perception"):
             candidate = payload.get(key)
             if isinstance(candidate, list):
-                return self._first_mapping(candidate)
+                return self._mappings(candidate)
             if isinstance(candidate, dict):
-                return candidate
+                return [candidate]
 
         if self._looks_like_event(payload):
-            return payload
+            return [payload]
 
-        return None
+        return []
 
     @staticmethod
     def _first_mapping(items: list[Any]) -> dict[str, Any] | None:
@@ -187,6 +195,10 @@ class AfferensAdapter:
             if isinstance(item, dict):
                 return item
         return None
+
+    @staticmethod
+    def _mappings(items: list[Any]) -> list[dict[str, Any]]:
+        return [item for item in items if isinstance(item, dict)]
 
     @staticmethod
     def _looks_like_event(payload: dict[str, Any]) -> bool:
