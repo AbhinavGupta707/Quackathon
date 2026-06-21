@@ -63,16 +63,20 @@ Do not claim medical-device behavior, diagnosis, emergency response, certified f
 
 ## Orchestration
 
-The master session owns orchestration, worktree creation, session spawning, monitoring, review, merges, and integration fixes.
+The master session owns orchestration, Codex worktree thread creation, monitoring, review, merges, and integration fixes.
 
-Spawned sessions must do substantial work with clear ownership. Do not spawn sessions for trivial edits.
+Do not use sub-agents for implementation work. Use actual Codex threads/sessions backed by isolated Git worktrees.
+
+Worktree sessions must do substantial work with clear ownership. Do not create worktree sessions for trivial edits.
 
 When parallelizing:
 
-- Use separate branches/worktrees.
+- Use separate Codex worktree sessions and branches.
 - Assign non-overlapping files.
 - Avoid concurrent edits to shared schemas, migrations, root config, or Docker Compose unless coordinated.
 - Require each session to report files changed, commands run, tests run, risks, and integration notes.
+
+An accidental sub-agent run was quarantined in a Git stash. Do not integrate sub-agent output unless the user explicitly requests inspection or salvage.
 
 ## Preferred Build Order
 

@@ -22,12 +22,14 @@ The product watches a real scene through an Afferens Vision Node, stores evidenc
 
 ## Orchestration Model
 
-This project should be built by a master orchestrator session.
+This project should be built by a master orchestrator session using actual Codex worktree threads/sessions.
+
+Do not use sub-agents for implementation work. Worktree sessions have better project functionality, branch isolation, and durable reasoning context for this project.
 
 The master session:
 
 - Plans the next checkpoint.
-- Spawns isolated worktree/branch sessions only for substantial work.
+- Creates isolated Codex worktree/branch sessions only for substantial work.
 - Assigns non-overlapping file ownership.
 - Monitors progress.
 - Reviews diffs and tests.
@@ -62,3 +64,5 @@ Optional Checkpoint 4: Live CV Enrichment
 - `.gitignore` ignores env files.
 - There was no Git repository at the time this memory was created.
 - `.agents/` could not be created due workspace permissions, so this file and root `AGENTS.md` are the local memory surface.
+- The repository is connected to `https://github.com/AbhinavGupta707/Quackathon.git`.
+- An accidental sub-agent run was stopped. Its unmerged output is quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`; do not integrate it unless the user explicitly asks.

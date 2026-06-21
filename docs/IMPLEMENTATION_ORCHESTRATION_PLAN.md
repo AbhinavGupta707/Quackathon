@@ -3,7 +3,9 @@
 ## Purpose
 
 This document is the working implementation plan for building Afferens Memory Guardian as a real, live-only product.
-It also defines how the master Codex session should orchestrate isolated implementation sessions, review their work, merge safely, and continue in loops until substantial checkpoints are reached.
+It also defines how the master Codex session should orchestrate isolated Codex worktree sessions, review their work, merge safely, and continue in loops until substantial checkpoints are reached.
+
+Important orchestration rule: do not use sub-agents for implementation work. Use actual Codex threads/sessions backed by isolated Git worktrees so each implementation lane has full project functionality, durable branch state, and independent reasoning context.
 
 The product requirement is strict:
 
@@ -28,21 +30,14 @@ The pasted Google Doc brief is treated as the event/source-of-truth brief when i
 
 ## Important Current State
 
-- The workspace currently has no Git repository initialized.
+- Git has been initialized and the planning/API-contract baseline has been pushed to `https://github.com/AbhinavGupta707/Quackathon.git`.
 - `.env` exists locally and contains the user's Afferens key. Never print, read aloud, commit, or expose it.
 - `.env.example` exists and documents required environment variables.
 - `.gitignore` ignores real env files.
 - `.agents/` could not be created due workspace permissions; root `AGENTS.md` and `docs/AGENT_MEMORY.md` are the durable local memory files.
+- An accidental sub-agent run was stopped and its output was quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`. Do not integrate that stash unless the user explicitly asks to inspect or salvage it.
 
-Before spawning isolated Git worktrees, the master orchestrator must initialize Git or confirm the user wants Git initialized:
-
-```bash
-git init
-git add .
-git commit -m "Initial Afferens Memory Guardian planning"
-```
-
-Because Git index and commit operations can require escalated permissions in this environment, request escalation when needed.
+Because Git index, branch, worktree, and commit operations can require escalated permissions in this environment, request escalation when needed.
 
 ## Product Thesis
 
@@ -190,8 +185,8 @@ Third-party vision providers such as Gemini, OpenAI vision, Roboflow, or local Y
    - Do not claim diagnosis, emergency response, fall-detection certification, or medical monitoring.
 
 6. Keep parallel work conflict-free:
-   - Each spawned session owns a narrow file/domain surface.
-   - Parallel sessions must not edit the same files unless explicitly coordinated.
+   - Each Codex worktree session owns a narrow file/domain surface.
+   - Parallel worktree sessions must not edit the same files unless explicitly coordinated.
    - The master session owns merges, conflict resolution, and final integration.
 
 7. Separate evidence from interpretation:
@@ -525,7 +520,7 @@ The current session acts as master orchestrator. It should work in loops:
 1. Inspect current project state.
 2. Decide the next checkpoint target.
 3. Identify independent workstreams that can run safely in parallel.
-4. Spawn only substantial sessions.
+4. Create only substantial Codex worktree sessions.
 5. Assign each session a branch/worktree and explicit file ownership.
 6. Monitor progress every few minutes.
 7. Review each completed session's diff, tests, and notes.
@@ -533,11 +528,21 @@ The current session acts as master orchestrator. It should work in loops:
 9. Run integration tests and fix seams.
 10. Decide whether to continue to the next checkpoint or stop for manual testing.
 
-Do not spawn sessions for tiny tasks that are cheaper and safer for the master session to do directly.
+Do not create worktree sessions for tiny tasks that are cheaper and safer for the master session to do directly.
+Do not use sub-agents for implementation work.
 
-## Session Spawning Rules
+## Worktree Session Creation Rules
 
-Use isolated worktrees/branches once Git is initialized.
+Use actual Codex threads/sessions with isolated Git worktrees. Prefer the Codex app thread tools (`list_projects`, then `create_thread` with `environment.type = "worktree"`) over sub-agent tooling.
+
+The master session should:
+
+1. Create a new Codex thread for each substantial lane.
+2. Target the saved Quackathon project.
+3. Use a worktree environment.
+4. Start each worktree from `main` or an explicit `ws/...` branch.
+5. Give each session a clear branch/worktree name in its prompt.
+6. Keep a local table of thread IDs, branch names, ownership, and status.
 
 Naming convention:
 
@@ -553,7 +558,7 @@ branches:
   ws/c1-docs-devex
 ```
 
-Each spawned session prompt must include:
+Each worktree session prompt must include:
 
 - Checkpoint target.
 - File ownership.
@@ -563,6 +568,7 @@ Each spawned session prompt must include:
 - Completion report format.
 - No-secrets rule.
 - Live-only runtime rule.
+- Explicit instruction that it is an isolated worktree session, not a sub-agent.
 
 Default reasoning:
 
@@ -577,7 +583,7 @@ Browser/Chrome/computer-use permissions:
 
 ## Parallelization Matrix
 
-### Safe To Run In Parallel
+### Safe To Run In Parallel As Worktree Sessions
 
 - Backend scaffold and Afferens adapter.
 - Frontend shell and setup/status UI.
@@ -607,20 +613,20 @@ Browser/Chrome/computer-use permissions:
 
 ### Batch 1: Reach Checkpoint 1
 
-Session A: Backend Spine
+Worktree Session A: Backend Spine
 
 - Owns `backend/**`.
 - Build FastAPI app, config, health endpoint, Afferens adapter, status/latest endpoints, tests.
 - Include placeholder provider interfaces for later LangGraph/Fireworks integration, but do not implement workflow logic in Checkpoint 1.
 - Must not touch frontend.
 
-Session B: Frontend Shell
+Worktree Session B: Frontend Shell
 
 - Owns `frontend/**`.
 - Build Next.js app shell, setup/status page, API client types against documented contract.
 - Must not touch backend except reading API contract.
 
-Session C: DevEx And Docs
+Worktree Session C: DevEx And Docs
 
 - Owns `README.md`, `docs/**`, Docker Compose draft, architecture docs.
 - Coordinates with master before finalizing `docker-compose.yml`.
@@ -628,23 +634,23 @@ Session C: DevEx And Docs
 Master:
 
 - Initializes Git.
-- Creates branches/worktrees.
+- Creates Codex worktree sessions.
 - Writes/locks API contract.
 - Merges in order: backend, frontend, docs/devex.
 - Runs integrated app and status endpoint.
 
 ### Batch 2: Reach Checkpoint 2
 
-Session A: Data And Memory
+Worktree Session A: Data And Memory
 
 - Owns backend models, migrations, raw event ledger, observation persistence, object memory service, task tables, verification-check tables.
 
-Session B: Normalizer, Query, And Workflows
+Worktree Session B: Normalizer, Query, And Workflows
 
 - Owns normalizer, object aliasing, query routing, LangGraph object-recovery workflow, Fireworks adapter, query/workflow tests.
 - Coordinates schema changes with Session A.
 
-Session C: Dashboard, Ask UI, And Active Tasks
+Worktree Session C: Dashboard, Ask UI, And Active Tasks
 
 - Owns dashboard, object memory table, raw event panel, ask interface, active task console.
 
@@ -656,15 +662,15 @@ Master:
 
 ### Batch 3: Reach Checkpoint 3
 
-Session A: Safety And Actuation
+Worktree Session A: Safety And Actuation
 
 - Owns safety rules, alerts, actuation adapter, safety LangGraph workflow, verification checks, tests.
 
-Session B: Caregiver And Evidence UI
+Worktree Session B: Caregiver And Evidence UI
 
 - Owns caregiver page, alert acknowledgement UI, evidence inspector.
 
-Session C: Hardening And QA
+Worktree Session C: Hardening And QA
 
 - Owns tests, README updates, local run docs, safety boundary docs.
 - Does not change core runtime logic without approval.
@@ -678,7 +684,7 @@ Master:
 
 ## Merge And Review Procedure
 
-For each session:
+For each completed worktree session:
 
 1. Inspect summary and changed files.
 2. Run targeted tests for that workstream.
@@ -695,9 +701,9 @@ For each session:
 
 If two sessions conflict, the master resolves conflict manually and reruns the relevant tests.
 
-## Required Completion Report For Spawned Sessions
+## Required Completion Report For Worktree Sessions
 
-Every spawned session must end with:
+Every worktree session must end with:
 
 ```text
 Status: complete | blocked
@@ -756,6 +762,6 @@ After this plan is accepted:
 
 1. Initialize Git.
 2. Commit the planning baseline.
-3. Discover available multi-agent/thread tools.
-4. Create Batch 1 worktrees.
-5. Spawn Checkpoint 1 sessions for backend spine, frontend shell, and docs/devex only if each can own non-overlapping files.
+3. Use `list_projects` to find the Quackathon project ID.
+4. Create Checkpoint 1 Codex worktree threads for backend spine, frontend shell, and docs/devex only if each can own non-overlapping files.
+5. Track each thread ID and branch/worktree assignment locally.
