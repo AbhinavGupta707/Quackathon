@@ -127,8 +127,8 @@ Important runtime variables:
 | `FIREWORKS_API_KEY` | Optional structured reasoning provider key. |
 | `LANGSMITH_TRACING` / `LANGSMITH_API_KEY` | Optional workflow tracing. |
 | `SEMANTIC_MEMORY_ENABLED` | Enables semantic retrieval surfaces when configured. |
-| `ACTION_YOLO_FALL_ENABLED` | Enables local YOLO fall-runtime validation and inference when a compatible model is configured. |
-| `ACTION_YOLO_FALL_MODEL_PATH` | Local path to a compatible fall model. Model weights are not tracked. |
+| `ACTION_YOLO_FALL_ENABLED` | Enables YOLO fall-runtime validation and inference. |
+| `ACTION_YOLO_FALL_MODEL_PATH` | Path to the bundled fall model, defaulting to `backend/models/project-memoria-fall-best.pt`. |
 | `ACTION_RAW_VIDEO_STORAGE_ENABLED` | Defaults to `false`; raw frames should stay off unless explicitly reviewed. |
 | `NEXT_PUBLIC_API_BASE_URL` | Browser-visible backend URL. Never put secrets in `NEXT_PUBLIC_` values. |
 | `CAREGIVER_ACCESS_ENABLED` | Optional lightweight caregiver route gate. |
@@ -176,4 +176,4 @@ Manual live checks should confirm:
 
 ## Repository Hygiene
 
-Tracked files are limited to product runtime, tests, setup scripts, deployment configuration, and this README. The repository should not include local secrets, frontend local environment files, generated build output, local model weights, MediaPipe downloaded assets, shell history, personal notes, or handoff material.
+Tracked files are limited to product runtime, tests, setup scripts, deployment configuration, the bundled fall-model artifact, and this README. The repository should not include local secrets, frontend local environment files, generated build output, MediaPipe downloaded assets, shell history, personal notes, or handoff material.

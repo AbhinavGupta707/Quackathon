@@ -23,11 +23,26 @@ def test_validate_setup_disabled_is_honest_unavailable() -> None:
     assert result.status.available is False
     assert result.status.state == "disabled"
     assert result.status.unavailable_reason == "disabled"
-    assert result.status.model_path_configured is False
+    assert result.status.model_path_configured is True
     assert result.status.model_file_exists is False
     assert result.checks["feature_enabled"].state == "failed"
     assert result.checks["ultralytics_import"].state == "skipped"
     assert result.checks["label_compatibility"].state == "skipped"
+
+
+def test_default_model_path_resolves_to_bundled_artifact() -> None:
+    adapter = UltralyticsFallAdapter(
+        Settings(
+            environment="test",
+            database_enabled=False,
+        )
+    )
+
+    model_path = adapter._model_path()
+
+    assert model_path is not None
+    assert model_path.name == "project-memoria-fall-best.pt"
+    assert model_path.is_file()
 
 
 def test_validate_setup_reports_missing_model_path_before_runtime_claims() -> None:

@@ -27,8 +27,10 @@ services:
       - key: AFFERENS_ACTUATION_ENABLED
         value: "false"
       - key: ACTION_YOLO_FALL_ENABLED
-        value: "false"
+        value: "true"
+      - key: ACTION_YOLO_FALL_MODEL_PATH
+        value: models/project-memoria-fall-best.pt
       - key: ACTION_RAW_VIDEO_STORAGE_ENABLED
         value: "false"
-      - key: DEMO_MODE
+      - key: FIXTURE_MODE
         value: "false"

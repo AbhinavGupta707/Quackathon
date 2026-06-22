@@ -105,11 +105,11 @@ class Settings(BaseSettings):
         validation_alias="AMBIENT_DEFAULT_POLL_INTERVAL_SECONDS",
     )
     action_yolo_fall_enabled: bool = Field(
-        default=False,
+        default=True,
         validation_alias="ACTION_YOLO_FALL_ENABLED",
     )
     action_yolo_fall_model_path: str | None = Field(
-        default=None,
+        default="backend/models/project-memoria-fall-best.pt",
         validation_alias="ACTION_YOLO_FALL_MODEL_PATH",
     )
     action_yolo_fall_confidence_threshold: float = Field(

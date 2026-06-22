@@ -450,7 +450,26 @@ class UltralyticsFallAdapter:
 
     def _model_path(self) -> Path | None:
         value = (self._settings.action_yolo_fall_model_path or "").strip()
-        return Path(value).expanduser() if value else None
+        if not value:
+            return None
+        configured = Path(value).expanduser()
+        if configured.is_absolute():
+            return configured
+
+        backend_root = Path(__file__).resolve().parents[1]
+        repo_root = backend_root.parent
+        candidates: list[Path] = []
+        for candidate in (
+            Path.cwd() / configured,
+            backend_root / configured,
+            repo_root / configured,
+        ):
+            if candidate not in candidates:
+                candidates.append(candidate)
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+        return candidates[0]
 
     def _unavailable(
         self,
