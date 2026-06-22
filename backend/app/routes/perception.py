@@ -7,6 +7,7 @@ from app.routes.dependencies import get_afferens_adapter, get_data_spine_service
 from app.schemas import (
     LatestObservationResponse,
     ObjectsLastSeenResponse,
+    PerceptionModalitiesResponse,
     PerceptionSyncRequest,
     PerceptionSyncResponse,
 )
@@ -29,7 +30,7 @@ async def perception_sync(
             message=fetch_result.status.message,
         )
 
-    sync_result = service.sync_raw_events(fetch_result.raw_events, room_id=request.room_id)
+    sync_result = service.sync_raw_events(fetch_result.raw_events, room_id=request.effective_room_id)
     return PerceptionSyncResponse(
         ok=True,
         observations=sync_result.observations,
@@ -38,6 +39,13 @@ async def perception_sync(
         alerts_created=sync_result.alerts_created,
         status=fetch_result.status,
     )
+
+
+@router.get("/api/perception/modalities", response_model=PerceptionModalitiesResponse)
+async def perception_modalities(
+    adapter: AfferensAdapter = Depends(get_afferens_adapter),
+) -> PerceptionModalitiesResponse:
+    return PerceptionModalitiesResponse(modalities=await adapter.probe_modalities())
 
 
 @router.get("/api/observations/latest", response_model=LatestObservationResponse)

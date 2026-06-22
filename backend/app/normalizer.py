@@ -9,6 +9,32 @@ from app.schemas import DetectedObject, HumanPresence, Observation, utc_now
 
 NORMALIZER_VERSION = "afferens-v1"
 
+MEDICINE_OBJECT_KEYS = {
+    "medicine",
+    "medicine_bottle",
+    "medication",
+    "medication_bottle",
+    "meds",
+    "pill",
+    "pill_bottle",
+    "pills",
+}
+COOKING_OBJECT_KEYS = {
+    "burner",
+    "cooktop",
+    "electric_stove",
+    "gas_stove",
+    "hob",
+    "oven",
+    "pan",
+    "pot",
+    "range",
+    "skillet",
+    "stove",
+    "stove_burner",
+    "stove_top",
+}
+
 
 class AfferensObservationNormalizer:
     """Derives internal observations from live Afferens event payloads."""
@@ -63,7 +89,7 @@ class AfferensObservationNormalizer:
             scene_summary=self._scene_summary(objects),
             human_presence=human_presence,
             objects=objects,
-            risk_signals=self._risk_signals(objects),
+            risk_signals=self._risk_signals(objects, human_presence),
             evidence_metadata={
                 "normalizer_version": NORMALIZER_VERSION,
                 "provider_event_id": provider_event_id,
@@ -180,11 +206,16 @@ class AfferensObservationNormalizer:
         return f"{names}{suffix}"
 
     @staticmethod
-    def _risk_signals(objects: list[DetectedObject]) -> list[str]:
+    def _risk_signals(
+        objects: list[DetectedObject],
+        human_presence: HumanPresence,
+    ) -> list[str]:
         risk_signals: list[str] = []
         labels = {obj.object_key for obj in objects}
-        if labels & {"medicine", "medication", "pills", "pill_bottle"}:
+        if labels & MEDICINE_OBJECT_KEYS:
             risk_signals.append("medicine_visible_human_verification_required")
+        if labels & COOKING_OBJECT_KEYS and human_presence != HumanPresence.VISIBLE:
+            risk_signals.append("unattended_cooking_possible_human_verification_required")
         return risk_signals
 
     def _human_presence(

@@ -4,8 +4,9 @@ import importlib.util
 
 from fastapi import APIRouter, Depends
 
-from app.config import Settings
+from app.config import ConfigIssueSeverity, Settings
 from app.db import get_database_status
+from app.observability import langsmith_status
 from app.providers.fireworks import FireworksReasoningAdapter
 from app.routes.dependencies import get_app_settings
 from app.schemas import (
@@ -24,10 +25,12 @@ async def health(
     afferens_service = _service_status_from_afferens_config(settings)
 
     services = {
+        "configuration": _service_status_from_config_validation(settings),
         "database": get_database_status(settings),
         "afferens": afferens_service,
         "fireworks": FireworksReasoningAdapter(settings).status(),
         "langgraph": _service_status_from_langgraph_install(),
+        "langsmith": langsmith_status(settings),
     }
 
     return HealthResponse(
@@ -35,6 +38,33 @@ async def health(
         version=settings.version,
         environment=settings.environment,
         services=services,
+    )
+
+
+def _service_status_from_config_validation(settings: Settings) -> ServiceStatus:
+    issues = settings.validate_startup_environment()
+    errors = [issue for issue in issues if issue.severity == ConfigIssueSeverity.ERROR]
+    warnings = [issue for issue in issues if issue.severity == ConfigIssueSeverity.WARNING]
+
+    if errors:
+        return ServiceStatus(
+            state=ServiceHealthState.ERROR,
+            message=(
+                "Startup configuration has blocking deployment issues: "
+                + ", ".join(issue.code for issue in errors)
+            ),
+        )
+    if warnings:
+        return ServiceStatus(
+            state=ServiceHealthState.DEGRADED,
+            message=(
+                "Startup configuration has non-blocking issues: "
+                + ", ".join(issue.code for issue in warnings)
+            ),
+        )
+    return ServiceStatus(
+        state=ServiceHealthState.OK,
+        message="Startup configuration passed required validation for this profile.",
     )
 
 
