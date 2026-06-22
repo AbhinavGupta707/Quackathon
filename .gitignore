@@ -7,4 +7,5 @@ __pycache__/
 node_modules/
 dist/
 build/
-
+local_models/
+frontend/public/mediapipe/

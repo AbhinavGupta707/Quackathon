@@ -1,207 +1,178 @@
 # Afferens Memory Guardian
 
-Afferens Memory Guardian is a live physical-perception product for the Quackathon Hardware / Physical Perception track.
+Afferens Memory Guardian is a live physical-perception system for helping patients and caregivers understand what is happening in a home environment. It combines a live Afferens Vision Node, durable object memory, action intelligence, reasoning workflows, and caregiver review surfaces into one product loop: perceive the room, store cited evidence, reason about what matters, act carefully, and verify outcomes later from fresh live observations.
 
-It uses a live Afferens Vision Node to perceive a real scene, persist evidence-backed object memories, answer object-location questions, show a memory console, and verify recovery tasks from later live observations or explicit human resolution.
+The system is designed for assistive memory and caregiver review. It is not a medical device, diagnostic system, emergency-response service, certified fall detector, or replacement for human supervision.
 
-This is an assistive prototype. It is not a medical device, diagnostic system, emergency-response service, certified fall detector, or substitute for human supervision.
+## Product Capabilities
 
-## Current State
+- Live Afferens ingestion with provider status, latest-observation sync, redacted health checks, and honest no-live-node states.
+- Durable object memory that tracks observations, last-seen locations, region context, evidence IDs, and stale-current distinctions.
+- Patient-facing memory assistance for questions such as where an object was last seen, with answers grounded in cited observations.
+- Active task flows for finding objects, verifying resolution from later live perception, and allowing explicit human resolution when appropriate.
+- Caregiver dashboard for alerts, action candidates, evidence review, home region calibration, daily care notes, wellness checks, and family-message prompts.
+- Live action intelligence for hydration candidates using browser pose/hand telemetry plus Afferens object context. Bottle, cup, or water visibility alone does not count as intake.
+- Conservative possible-fall candidate handling with local YOLO readiness checks, persistence/debounce rules, and caregiver escalation language.
+- Provider readiness views for Afferens, Fireworks, LangSmith, semantic memory, optional visual enrichment providers, local action runtime, and privacy settings.
+- Disabled-by-default assistive actuation for alarm and frame-capture commands, with every attempt logged and tied to a task or alert.
+- Semantic memory with lexical fallback and optional vector retrieval for cited, evidence-backed recall.
 
-Implemented on `main`:
+## Architecture
 
-- FastAPI backend with `/api/health`, `/api/afferens/status`, `/api/afferens/latest`, `/api/perception/sync`, `/api/observations/latest`, `/api/objects/last-seen`, and `/api/tasks`.
-- Backend object-recovery workflow with `/api/query`, `/api/tasks/{task_id}/verify`, `/api/tasks/{task_id}/resolve`, `/api/alerts`, and `/api/alerts/{alert_id}/ack`.
-- Durable data spine models for raw Afferens events, normalized observations, detected objects, last-seen memory, queries, tasks, alerts, actuation attempts, verification checks, and status events.
-- Alembic migration for the durable memory schema.
-- Fireworks structured reasoning adapter and LangGraph object-recovery workflow wrapper, both with graceful fallback when unavailable.
-- Postgres + pgvector local Compose service.
-- Next.js memory console with live status, sync action, latest observation/evidence display, object memory table, query UI, alert queue, active task console, task verify/resolve controls, and alert acknowledgement.
+```mermaid
+flowchart LR
+  node["Afferens Node"] --> backend["FastAPI backend"]
+  browser["Browser Action Node"] --> backend
+  backend --> db["Postgres + pgvector"]
+  backend --> workflows["LangGraph workflows"]
+  backend --> providers["Fireworks / provider adapters"]
+  backend --> frontend["Next.js patient UI"]
+  backend --> caregiver["Next.js caregiver UI"]
+  caregiver --> actuation["Afferens actuation commands"]
+```
 
-Still pending:
+- `backend/app`: FastAPI routes, Afferens adapter, normalization, repositories, action intelligence, workflows, provider status, and safety/actuation services.
+- `backend/alembic`: migrations for durable observations, object memory, home regions, daily care, action events, runtime monitor state, and semantic retrieval.
+- `backend/tests`: focused route, workflow, safety, provider, action-intelligence, and persistence tests.
+- `frontend/app`: Next.js routes for patient mode, caregiver review, and caregiver access.
+- `frontend/components`: patient/caregiver panels, action review, evidence, wellness, semantic memory, and provider readiness UI.
+- `frontend/lib`: API client, action telemetry, hydration finite-state machine, lazy MediaPipe pose/hand runtime, and shared types.
+- `frontend/scripts`: static checks for hydration semantics and MediaPipe lazy-loading, plus local MediaPipe asset setup.
+- `scripts`: provider redaction smoke and local YOLO fall-model validator.
 
-- Alarm actuation and streaming updates.
-- Full manual live Afferens plus Fireworks smoke test.
+## Live-Only Runtime
 
-The frontend can ask object-location questions, list alerts, verify tasks from live perception, record human resolution, and acknowledge alerts through the backend.
+Runtime product behavior must be grounded in live Afferens perception and live browser action telemetry.
 
-## Live-Only Rule
-
-Runtime product flows must use live Afferens perception.
-
-- Do not serve cached, replayed, or fixture perception as if it were live.
 - Fixtures are allowed only in tests.
-- If no live Afferens Node is active, the app must show an honest no-live-node state.
-- Answers, tasks, and alerts must cite evidence IDs or say evidence is insufficient.
-- Domain-specific AI providers may enrich classification or reasoning, but Afferens remains the live physical evidence gate.
+- If a live Afferens Node is unavailable, the product should show that state directly.
+- Object visibility can provide context, but hydration requires temporal action evidence.
+- Fall checks require model-backed or action-backed evidence plus persistence, then caregiver verification.
+- AI provider output may enrich reasoning, but it must not replace Afferens as the physical evidence gate.
+- Raw video frames are not persisted by default.
 
-Diagnose Afferens issues in layer order:
+## Prerequisites
 
-1. Confirm API key configuration without revealing the key.
-2. Confirm Afferens account/key status.
-3. Confirm node setup at <https://afferens.com/node>.
-4. Confirm live `/api/perception` availability through backend status/latest calls.
-5. Only then debug camera permissions, runtime parsing, or downstream UI behavior.
-
-## Quick Start
-
-Prerequisites:
-
+- Python 3.11 or newer.
+- Node.js 20 or newer.
 - Docker Desktop or another Docker Compose compatible runtime.
-- Python 3.11+.
-- Node.js 20+.
-- An Afferens account, API key, and live node from <https://afferens.com/node>.
+- An Afferens account, API key, and live node from [afferens.com/node](https://afferens.com/node).
 
-Create local configuration:
+## Local Setup
+
+Create local configuration from the checked-in template:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` locally and set at least:
+Set at least these local values without committing secrets:
 
 ```text
 AFFERENS_API_KEY=...
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/afferens_memory_guardian
 DATABASE_ENABLED=true
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/afferens_memory_guardian
 ```
 
-If you run the backend on a non-default port, for example `8010`, also create `frontend/.env.local`:
-
-```text
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8010
-```
-
-Restart `npm run dev` after changing `frontend/.env.local`; Next.js reads public env values when the dev server starts.
-
-Do not commit `.env`, print API keys, or include secrets in screenshots.
-
-Start Postgres + pgvector:
+Start Postgres:
 
 ```bash
 docker compose up -d postgres
 ```
 
-Install and test the backend:
+Install the backend:
 
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[test]"
-python -m pytest
-```
-
-Run migrations:
-
-```bash
 alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Start the API:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Install and run the frontend in a second terminal:
+In a second terminal, install and run the frontend:
 
 ```bash
 cd frontend
 npm install
+npm run setup:mediapipe
 npm run dev
 ```
 
-Open <http://localhost:3000>.
+Open the product surfaces:
 
-## Local Checks
+- Patient mode: [localhost:3000](http://localhost:3000)
+- Caregiver review: [localhost:3000/caregiver](http://localhost:3000/caregiver)
+- Afferens node setup: [afferens.com/node](https://afferens.com/node)
 
-Backend:
+If the backend is not running on `http://localhost:8000`, create `frontend/.env.local` locally:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:<backend-port>
+```
+
+Restart the frontend after changing public frontend environment values.
+
+## Configuration
+
+Important runtime variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `AFFERENS_API_KEY` | Server-side key for live Afferens perception. |
+| `AFFERENS_BASE_URL` | Afferens API base URL, defaulting to `https://afferens.com`. |
+| `DATABASE_URL` | Postgres connection string for durable memory and tasks. |
+| `FIREWORKS_API_KEY` | Optional structured reasoning provider key. |
+| `LANGSMITH_TRACING` / `LANGSMITH_API_KEY` | Optional workflow tracing. |
+| `SEMANTIC_MEMORY_ENABLED` | Enables semantic retrieval surfaces when configured. |
+| `ACTION_YOLO_FALL_ENABLED` | Enables local YOLO fall-runtime validation and inference when a compatible model is configured. |
+| `ACTION_YOLO_FALL_MODEL_PATH` | Local path to a compatible fall model. Model weights are not tracked. |
+| `ACTION_RAW_VIDEO_STORAGE_ENABLED` | Defaults to `false`; raw frames should stay off unless explicitly reviewed. |
+| `NEXT_PUBLIC_API_BASE_URL` | Browser-visible backend URL. Never put secrets in `NEXT_PUBLIC_` values. |
+| `CAREGIVER_ACCESS_ENABLED` | Optional lightweight caregiver route gate. |
+| `CAREGIVER_PASSCODE` | Server-side passcode for the caregiver gate. |
+| `FIXTURE_MODE` | Test-only guardrail; keep disabled for runtime use. |
+
+## Verification
+
+Run the backend suite:
 
 ```bash
 cd backend
 python -m pytest
 ```
 
-Frontend:
+Run frontend checks:
 
 ```bash
 cd frontend
 npm run lint
 npm run typecheck
+npm run check:hydration-fsm
+npm run check:mediapipe-lazy
 npm run build
 ```
 
-Docs and whitespace:
+Run focused repository-level smoke checks from the repository root:
 
 ```bash
+backend/.venv/bin/python scripts/smoke_provider_redaction.py
+backend/.venv/bin/python scripts/validate_yolo_fall_model.py
 git diff --check
 ```
 
-## Optional Live Afferens Smoke Test
+Manual live checks should confirm:
 
-Only run this when you are ready for manual live testing.
+- `/api/health` redacts secrets and shows provider readiness.
+- `/api/afferens/status` and `/api/afferens/latest` reflect a running Afferens Node.
+- Patient object memory updates after a live sync and answers cite evidence IDs.
+- Caregiver review opens at `/caregiver` and shows alerts, wellness checks, action candidates, and evidence.
+- The Action Node lazy-loads MediaPipe only after starting.
+- Hydration candidates require hand/object/mouth temporal evidence plus Afferens object context.
+- Possible-fall candidates use configured model/action evidence, persistence, and caregiver escalation wording.
+- Actuation remains disabled unless deliberately configured and tested against a safe live node.
 
-1. Start Postgres.
-2. Install backend and frontend dependencies.
-3. Add local `.env` keys without exposing them.
-4. Start the backend and frontend.
-5. Open <https://afferens.com/node> on a phone, laptop, or USB-webcam setup.
-6. Start a live Vision node.
-7. Click sync in the memory console, or call:
+## Repository Hygiene
 
-```bash
-curl -X POST http://localhost:8000/api/perception/sync \
-  -H "Content-Type: application/json" \
-  -d '{"limit":1,"room_id":"default_home_zone"}'
-```
-
-8. Confirm latest observation and last-seen objects populate from live evidence.
-9. Once `/api/query` lands, ask one object-location question such as "Where are my keys?"
-
-## Afferens Node Choices
-
-Phone, laptop webcam, and USB webcam nodes are all valid. The product should stay node-agnostic.
-
-- Laptop webcam: acceptable for a wider fixed field of view, especially if the laptop can see the whole table or counter.
-- Phone: often easier to position close to objects or move between rooms during a hackathon demo.
-- USB webcam: useful when the laptop needs to stay free and the camera needs a stable angle.
-
-You do not need to grant camera permissions until manual live testing. Before debugging permissions, first confirm the key, account, node activation flow, and backend live status.
-
-## Environment Variables
-
-Documented variables are in [.env.example](.env.example).
-
-| Variable | Scope | Notes |
-| --- | --- | --- |
-| `ENVIRONMENT` | Backend | Local default is `development`. |
-| `APP_VERSION` | Backend | Optional override for health metadata. |
-| `AFFERENS_API_KEY` | Backend secret | Required for live Afferens perception. |
-| `AFFERENS_BASE_URL` | Backend | Defaults to `https://afferens.com`. |
-| `AFFERENS_TIMEOUT_SECONDS` | Backend | HTTP timeout for Afferens calls. |
-| `AFFERENS_POLL_INTERVAL_SECONDS` | App config | Development poll cadence for status/sync surfaces. |
-| `DATABASE_URL` | Backend secret-ish local config | Required for durable memory. Use the local Compose URL for development. |
-| `DATABASE_ENABLED` | Backend | Set `true` for the current product flow. |
-| `DATABASE_CONNECT_TIMEOUT_SECONDS` | Backend | Database health/session connection timeout. |
-| `FIREWORKS_API_KEY` | Backend secret | Enables structured query routing and answer synthesis; deterministic fallback is used when absent. |
-| `FIREWORKS_BASE_URL` | Backend | Fireworks OpenAI-compatible endpoint. |
-| `FIREWORKS_MODEL` | Backend | Fireworks model ID for structured reasoning. |
-| `LANGSMITH_TRACING` | Backend optional | Optional tracing for LangGraph development. |
-| `LANGSMITH_API_KEY` | Backend optional secret | Only needed when tracing is enabled. |
-| `LANGSMITH_PROJECT` | Backend optional | Local trace project name. |
-| `NEXT_PUBLIC_API_BASE_URL` | Frontend public | Browser-visible backend base URL. Never put secrets here. |
-| `DEMO_MODE` | Tests/docs guardrail | Keep `false` for product runtime. Fixtures belong in tests only. |
-
-## Architecture And Contracts
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) describes the service boundaries and live evidence loop.
-- [docs/API_CONTRACT.md](docs/API_CONTRACT.md) defines the shared response shapes.
-- [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) has a command-oriented local setup guide.
-- [docs/IMPLEMENTATION_ORCHESTRATION_PLAN.md](docs/IMPLEMENTATION_ORCHESTRATION_PLAN.md) tracks checkpoint sequencing and worktree orchestration.
-
-## Orchestration Note
-
-This project is coordinated through actual Codex worktree sessions with isolated ownership. Do not use sub-agents for implementation work.
-
-An accidental sub-agent run was quarantined in a Git stash named `quarantine subagent output from wrong orchestration mode`. Do not inspect, apply, or integrate that stash unless the user explicitly asks.
+Tracked files are limited to product runtime, tests, setup scripts, deployment configuration, and this README. The repository should not include local secrets, frontend local environment files, generated build output, local model weights, MediaPipe downloaded assets, shell history, personal notes, or handoff material.
