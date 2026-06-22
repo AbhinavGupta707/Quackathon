@@ -96,9 +96,10 @@ In a second terminal, install and run the frontend:
 ```bash
 cd frontend
 npm install
-npm run setup:mediapipe
 npm run dev
 ```
+
+`npm run dev` and `npm run build` prepare the browser MediaPipe assets automatically.
 
 Open the product surfaces:
 

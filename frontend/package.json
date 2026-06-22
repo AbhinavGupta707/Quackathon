@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run setup:mediapipe",
     "dev": "next dev",
+    "prebuild": "npm run setup:mediapipe",
     "build": "next build",
     "check:hydration-fsm": "node scripts/assert-hydration-action-semantics.mjs",
     "check:mediapipe-lazy": "node scripts/assert-mediapipe-lazy-load.mjs",
