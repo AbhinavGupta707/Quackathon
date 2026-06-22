@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from typing import Any
+
 from fastapi.testclient import TestClient
 
 from app.config import Settings
@@ -14,6 +17,7 @@ from app.routes.dependencies import (
 )
 from app.schemas import LastSeenObject
 from app.services import DataSpineService
+import app.workflows.object_recovery as object_recovery_module
 from app.workflows.object_recovery import ObjectRecoveryWorkflow
 
 
@@ -160,3 +164,58 @@ def test_langgraph_workflow_fallback_opens_memory_recovery_plan() -> None:
     assert status.state == "degraded"
     assert plan["should_open_task"] is True
     assert "left side of the table" in plan["recommended_action"]
+
+
+def test_langgraph_workflow_adds_privacy_safe_langsmith_trace(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    @contextmanager
+    def fake_trace(settings: Settings, name: str, **kwargs: Any) -> Any:
+        captured["name"] = name
+        captured["inputs"] = kwargs["inputs"]
+        captured["metadata"] = kwargs["metadata"]
+        captured["tags"] = kwargs["tags"]
+        yield object()
+
+    def fake_add_outputs(run: object, outputs: dict[str, Any], *, include_content: bool = False) -> None:
+        captured["outputs"] = outputs
+        captured["include_content"] = include_content
+
+    monkeypatch.setattr(object_recovery_module, "langsmith_trace", fake_trace)
+    monkeypatch.setattr(object_recovery_module, "add_trace_outputs", fake_add_outputs)
+
+    settings = Settings(
+        langsmith_tracing=True,
+        langsmith_api_key="langsmith-secret-key",
+        langsmith_trace_content=False,
+    )
+    memory = LastSeenObject(
+        object_key="keys",
+        display_name="keys",
+        last_seen_at="2026-06-21T16:00:00Z",
+        last_seen_room="kitchen",
+        last_seen_relative_location="left side of the table",
+        last_seen_observation_id="obs_keys",
+        last_confidence=0.8,
+        evidence_observation_ids=["obs_keys"],
+    )
+    workflow = ObjectRecoveryWorkflow(settings=settings, force_disabled=True)
+
+    plan = workflow.plan_recovery(
+        query="Where are my keys?",
+        object_key="keys",
+        memory=memory,
+        current_visible=False,
+    )
+
+    assert plan["should_open_task"] is True
+    assert captured["name"] == "langgraph.object_recovery.plan"
+    assert captured["inputs"] == {
+        "object_key": "keys",
+        "has_memory": True,
+        "current_visible": False,
+    }
+    assert captured["metadata"]["workflow"] == "object_recovery"
+    assert captured["outputs"]["should_open_task"] is True
+    assert captured["outputs"]["recommended_action"] is None
+    assert captured["include_content"] is False
