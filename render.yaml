@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: afferens-memory-guardian-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -e .
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: STARTUP_VALIDATION_STRICT
+        value: "true"
+      - key: DATABASE_ENABLED
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: AFFERENS_API_KEY
+        sync: false
+      - key: PUBLIC_API_BASE_URL
+        sync: false
+      - key: FRONTEND_PUBLIC_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: AFFERENS_ACTUATION_ENABLED
+        value: "false"
+      - key: ACTION_YOLO_FALL_ENABLED
+        value: "false"
+      - key: ACTION_RAW_VIDEO_STORAGE_ENABLED
+        value: "false"
+      - key: DEMO_MODE
+        value: "false"

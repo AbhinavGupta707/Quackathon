@@ -30,3 +30,18 @@ export function sentenceCase(value: string): string {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
+
+export function objectStatusLabel(status: string): string {
+  switch (status) {
+    case "visible_now":
+      return "I can see it now";
+    case "visible_recently":
+      return "Last seen recently";
+    case "not_seen_recently":
+      return "Last seen earlier";
+    case "unknown":
+      return "Not sure yet";
+    default:
+      return sentenceCase(status);
+  }
+}

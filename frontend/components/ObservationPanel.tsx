@@ -45,7 +45,7 @@ export function ObservationPanel({
       ) : !observation ? (
         <StateBlock
           title="No live observation yet"
-          body="Start an Afferens Node, then sync perception. The app will not show cached or replayed perception as current evidence."
+          body="Start an Afferens Node, then sync perception. The app will not show stored or replayed perception as current evidence."
         />
       ) : (
         <div className="observation" id="latest-observation">
