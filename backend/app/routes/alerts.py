@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.schemas import AlertAckRequest, AlertAckResponse, AlertStatus, AlertsResponse, utc_now
+from app.alerts import CaregiverNotificationService
+from app.schemas import (
+    AlertAckRequest,
+    AlertAckResponse,
+    AlertStatus,
+    AlertsResponse,
+    CaregiverNotificationsResponse,
+    utc_now,
+)
 from app.services import DataSpineService
-from app.routes.dependencies import get_data_spine_service
+from app.routes.dependencies import get_caregiver_notification_service, get_data_spine_service
 
 router = APIRouter(tags=["alerts"])
 
@@ -15,6 +25,22 @@ async def alerts(
     service: DataSpineService = Depends(get_data_spine_service),
 ) -> AlertsResponse:
     return AlertsResponse(alerts=service.list_alerts(status=status_filter))
+
+
+@router.get("/api/alerts/notifications", response_model=CaregiverNotificationsResponse)
+async def caregiver_notifications(
+    date: date | None = Query(default=None),
+    include_acknowledged: bool = Query(default=False),
+    limit: int = Query(default=100, ge=1, le=200),
+    service: CaregiverNotificationService = Depends(get_caregiver_notification_service),
+) -> CaregiverNotificationsResponse:
+    return CaregiverNotificationsResponse(
+        notifications=service.list_notifications(
+            notification_date=date,
+            include_acknowledged=include_acknowledged,
+            limit=limit,
+        )
+    )
 
 
 @router.post("/api/alerts/{alert_id}/ack", response_model=AlertAckResponse)

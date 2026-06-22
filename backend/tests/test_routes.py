@@ -16,6 +16,9 @@ def _client_with_transport(transport: httpx.MockTransport) -> TestClient:
         afferens_base_url="https://afferens.test",
         afferens_api_key="test-api-key",
         database_enabled=False,
+        fireworks_api_key=None,
+        langsmith_tracing=False,
+        langsmith_api_key=None,
     )
     app.dependency_overrides[get_app_settings] = lambda: settings
     app.dependency_overrides[get_afferens_adapter] = lambda: AfferensAdapter(
@@ -85,3 +88,4 @@ def test_health_reports_provider_state() -> None:
     assert payload["services"]["database"]["state"] == "degraded"
     assert payload["services"]["fireworks"]["state"] == "degraded"
     assert payload["services"]["langgraph"]["state"] in {"ok", "degraded"}
+    assert payload["services"]["langsmith"]["state"] == "degraded"

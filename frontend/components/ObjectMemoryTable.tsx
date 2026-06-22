@@ -1,4 +1,4 @@
-import { formatDateTime, formatPercent, sentenceCase } from "@/lib/format";
+import { formatDateTime, formatPercent, objectStatusLabel } from "@/lib/format";
 import type { Loadable, ObjectsResponse } from "@/lib/types";
 import { EvidenceRefs } from "./EvidenceRefs";
 import { Panel } from "./Panel";
@@ -43,7 +43,7 @@ export function ObjectMemoryTable({ objects }: ObjectMemoryTableProps) {
                     <span>{object.object_key}</span>
                   </td>
                   <td>
-                    <StatusPill label={sentenceCase(object.status)} tone={object.status === "visible_now" ? "good" : "quiet"} />
+                    <StatusPill label={objectStatusLabel(object.status)} tone={object.status === "visible_now" ? "good" : "quiet"} />
                   </td>
                   <td>{formatDateTime(object.last_seen_at)}</td>
                   <td>{object.last_seen_room || "Unknown"}</td>

@@ -1,9 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  applicationName: "Memory Guardian",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Memory Guardian"
+  },
   title: "Afferens Memory Guardian",
-  description: "Live physical-perception dashboard for evidence-backed home assistance."
+  description: "Evidence-backed home memory assistance for patient and caregiver review.",
+  manifest: "/manifest.webmanifest"
+};
+
+export const viewport: Viewport = {
+  themeColor: "#11695f",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 };
 
 type RootLayoutProps = {

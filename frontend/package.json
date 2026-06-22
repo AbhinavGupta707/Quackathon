@@ -3,22 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run setup:mediapipe",
     "dev": "next dev",
+    "prebuild": "npm run setup:mediapipe",
     "build": "next build",
+    "check:hydration-fsm": "node scripts/assert-hydration-action-semantics.mjs",
+    "check:mediapipe-lazy": "node scripts/assert-mediapipe-lazy-load.mjs",
     "lint": "eslint .",
+    "setup:mediapipe": "node scripts/setup-mediapipe-assets.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35",
     "next": "^15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "eslint": "^9.29.0",
-    "eslint-config-next": "^15.3.4",
     "@types/node": "^22.15.32",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
+    "eslint": "^9.29.0",
+    "eslint-config-next": "^15.3.4",
     "typescript": "^5.8.3"
   }
 }

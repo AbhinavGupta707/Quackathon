@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from typing import Any, TypedDict
 
+from app.config import Settings, get_settings
+from app.observability import add_trace_outputs, langsmith_trace
 from app.schemas import LastSeenObject, ServiceHealthState, ServiceStatus
 
 
@@ -19,7 +21,13 @@ class ObjectRecoveryState(TypedDict, total=False):
 class ObjectRecoveryWorkflow:
     """Object-recovery lifecycle planner with an optional LangGraph runtime."""
 
-    def __init__(self, *, force_disabled: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        force_disabled: bool = False,
+    ) -> None:
+        self._settings = settings or get_settings()
         self._force_disabled = force_disabled
         self._compiled_graph: Any | None = None
 
@@ -54,6 +62,40 @@ class ObjectRecoveryWorkflow:
             "memory": memory.model_dump(mode="json") if memory else None,
             "current_visible": current_visible,
         }
+        trace_inputs: dict[str, Any] = {
+            "object_key": object_key,
+            "has_memory": memory is not None,
+            "current_visible": current_visible,
+        }
+        if self._settings.langsmith_trace_content:
+            trace_inputs["query"] = query
+            trace_inputs["memory"] = state["memory"]
+        with langsmith_trace(
+            self._settings,
+            "langgraph.object_recovery.plan",
+            inputs=trace_inputs,
+            metadata={
+                "workflow": "object_recovery",
+                "langgraph_available": self.available,
+            },
+            tags=["langgraph", "object-recovery"],
+        ) as trace_run:
+            result = self._plan_recovery_state(state)
+            add_trace_outputs(
+                trace_run,
+                {
+                    "state": result.get("state"),
+                    "should_open_task": result.get("should_open_task"),
+                    "has_recommended_action": bool(result.get("recommended_action")),
+                    "recommended_action": result.get("recommended_action")
+                    if self._settings.langsmith_trace_content
+                    else None,
+                },
+                include_content=self._settings.langsmith_trace_content,
+            )
+            return result
+
+    def _plan_recovery_state(self, state: ObjectRecoveryState) -> ObjectRecoveryState:
         if not self.available:
             return self._deterministic_plan(state)
 
